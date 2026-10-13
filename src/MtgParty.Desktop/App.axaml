@@ -1,14 +1,45 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MtgParty.Desktop.ViewModels"
+             xmlns:views="using:MtgParty.Desktop.Views"
              x:Class="MtgParty.Desktop.App"
              RequestedThemeVariant="Dark">
   <Application.Resources>
     <SolidColorBrush x:Key="TableBrush">#1C1726</SolidColorBrush>
     <SolidColorBrush x:Key="PanelBrush">#261F33</SolidColorBrush>
+    <SolidColorBrush x:Key="ZoneBrush">#211B2D</SolidColorBrush>
     <SolidColorBrush x:Key="LineBrush">#3A3149</SolidColorBrush>
     <SolidColorBrush x:Key="GoldBrush">#D4A64A</SolidColorBrush>
     <SolidColorBrush x:Key="MutedBrush">#A99DB8</SolidColorBrush>
     <SolidColorBrush x:Key="DangerBrush">#E0705A</SolidColorBrush>
+    <SolidColorBrush x:Key="PlayableBrush">#5FD07A</SolidColorBrush>
+    <SolidColorBrush x:Key="TargetBrush">#FF8A3D</SolidColorBrush>
+
+    <!-- Una carta del tablero que se puede tocar -->
+    <DataTemplate x:Key="BoardCard" x:DataType="vm:BoardCardViewModel">
+      <Button Classes="tile" Command="{Binding ClickCommand}">
+        <views:CardTile />
+      </Button>
+    </DataTemplate>
+    <!-- Las tierras van a la mitad de tamaño, de a dos por columna -->
+    <DataTemplate x:Key="LandCard" x:DataType="vm:BoardCardViewModel">
+      <Button Classes="tile" Command="{Binding ClickCommand}">
+        <views:CardTile Scale="0.48" />
+      </Button>
+    </DataTemplate>
+    <DataTemplate x:Key="StackCard" x:DataType="vm:StackEntry">
+      <Border Classes="card" Padding="6" Margin="0,0,0,6">
+        <Grid ColumnDefinitions="Auto,*">
+          <views:CardTile DataContext="{Binding Card}" Scale="0.42" />
+          <TextBlock Grid.Column="1" Text="{Binding Text}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="8,0,0,0" />
+        </Grid>
+      </Border>
+    </DataTemplate>
+    <DataTemplate x:Key="PhaseChipTemplate" x:DataType="vm:PhaseChip">
+      <Border Classes="phase" Classes.current="{Binding Current}" Classes.past="{Binding Past}">
+        <TextBlock Text="{Binding Label}" FontSize="12" />
+      </Border>
+    </DataTemplate>
   </Application.Resources>
   <Application.Styles>
     <FluentTheme />
@@ -46,6 +77,86 @@
       <Setter Property="FontSize" Value="24" />
       <Setter Property="FontWeight" Value="Bold" />
       <Setter Property="Foreground" Value="{StaticResource GoldBrush}" />
+    </Style>
+    <Style Selector="TextBlock.zone">
+      <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+      <Setter Property="FontSize" Value="12" />
+    </Style>
+
+    <!-- Cartas del tablero: un botón sin decoración alrededor de la carta -->
+    <Style Selector="Button.tile">
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Margin" Value="0,0,6,6" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Focusable" Value="False" />
+      <Setter Property="VerticalAlignment" Value="Top" />
+    </Style>
+    <Style Selector="Button.tile:pointerover /template/ ContentPresenter, Button.tile:pressed /template/ ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="ItemsControl.row">
+      <Setter Property="ItemTemplate" Value="{StaticResource BoardCard}" />
+      <Setter Property="ItemsPanel">
+        <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+      </Setter>
+    </Style>
+    <Style Selector="ItemsControl.lands">
+      <Setter Property="ItemTemplate" Value="{StaticResource LandCard}" />
+      <Setter Property="ItemsPanel">
+        <ItemsPanelTemplate><WrapPanel Orientation="Vertical" /></ItemsPanelTemplate>
+      </Setter>
+    </Style>
+
+    <!-- Las zonas del tablero -->
+    <Style Selector="Border.zone">
+      <Setter Property="Background" Value="{StaticResource ZoneBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="10" />
+      <Setter Property="Padding" Value="8,8,2,2" />
+    </Style>
+
+    <!-- Las vidas: grandes, y en naranja cuando el jugador es un objetivo válido -->
+    <Style Selector="Button.life">
+      <Setter Property="Background" Value="#3A3149" />
+      <Setter Property="BorderBrush" Value="#3A3149" />
+      <Setter Property="BorderThickness" Value="2" />
+      <Setter Property="CornerRadius" Value="10" />
+      <Setter Property="Padding" Value="12,4" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="Focusable" Value="False" />
+    </Style>
+    <Style Selector="Button.life.targetable">
+      <Setter Property="BorderBrush" Value="{StaticResource TargetBrush}" />
+    </Style>
+    <Style Selector="Button.life.targetable /template/ ContentPresenter">
+      <Setter Property="BoxShadow" Value="0 0 12 2 #A0FF8A3D" />
+    </Style>
+
+    <!-- La barra de fases -->
+    <Style Selector="Border.phase">
+      <Setter Property="CornerRadius" Value="10" />
+      <Setter Property="Padding" Value="9,2" />
+      <Setter Property="Margin" Value="0,0,4,0" />
+      <Setter Property="Background" Value="#2E2640" />
+      <Setter Property="TextElement.Foreground" Value="#C9BFD6" />
+    </Style>
+    <Style Selector="Border.phase.past">
+      <Setter Property="Opacity" Value="0.45" />
+    </Style>
+    <Style Selector="Border.phase.current">
+      <Setter Property="Background" Value="{StaticResource GoldBrush}" />
+      <Setter Property="TextElement.Foreground" Value="#2B2131" />
+      <Setter Property="TextElement.FontWeight" Value="Bold" />
+    </Style>
+    <Style Selector="Border.kbd">
+      <Setter Property="Background" Value="#3A3149" />
+      <Setter Property="CornerRadius" Value="4" />
+      <Setter Property="Padding" Value="5,0" />
+      <Setter Property="Margin" Value="6,0,0,0" />
+      <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
   </Application.Styles>
 </Application>

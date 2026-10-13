@@ -1,0 +1,112 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MtgParty.Desktop.ViewModels"
+             x:Class="MtgParty.Desktop.Views.CardTile"
+             x:DataType="vm:CardTileViewModel"
+             ToolTip.ShowDelay="350" ToolTip.Placement="Right">
+  <UserControl.Styles>
+    <Style Selector="Border.frame">
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="3" />
+      <Setter Property="CornerRadius" Value="9" />
+      <Setter Property="Padding" Value="0" />
+    </Style>
+    <Style Selector="Border.frame.playable">
+      <Setter Property="BorderBrush" Value="#5FD07A" />
+      <Setter Property="BoxShadow" Value="0 0 10 1 #805FD07A" />
+    </Style>
+    <Style Selector="Border.frame.targetable">
+      <Setter Property="BorderBrush" Value="#FF8A3D" />
+      <Setter Property="BoxShadow" Value="0 0 12 2 #A0FF8A3D" />
+    </Style>
+    <Style Selector="Border.frame.selected">
+      <Setter Property="BorderBrush" Value="#F2C14E" />
+      <Setter Property="BoxShadow" Value="0 0 12 2 #A0F2C14E" />
+    </Style>
+    <Style Selector="Border.frame:pointerover">
+      <Setter Property="RenderTransform" Value="translateY(-3px)" />
+    </Style>
+    <Style Selector="Border.pill.boosted">
+      <Setter Property="Background" Value="#F0B9E6B0" />
+    </Style>
+    <Style Selector="Border.pill.reduced">
+      <Setter Property="Background" Value="#F0F2B0A4" />
+    </Style>
+    <Style Selector="Border.pill">
+      <Setter Property="CornerRadius" Value="12" />
+      <Setter Property="Padding" Value="10,2" />
+    </Style>
+  </UserControl.Styles>
+
+  <ToolTip.Tip>
+    <Panel Width="320">
+      <Image Source="{Binding Image}" IsVisible="{Binding HasImage}" Width="320" Height="446"
+             RenderOptions.BitmapInterpolationMode="HighQuality" />
+      <Border IsVisible="{Binding !HasImage}" Background="{Binding FrameBrush}" CornerRadius="10" Padding="14">
+        <StackPanel Spacing="6" TextElement.Foreground="#241C2B">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="18" TextWrapping="Wrap" />
+            <TextBlock Grid.Column="1" Text="{Binding Cost}" FontSize="14" Margin="8,2,0,0" />
+          </Grid>
+          <TextBlock Text="{Binding TypeLine}" FontStyle="Italic" FontSize="13" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding Text}" FontSize="14" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding Stats}" FontWeight="Bold" FontSize="18" HorizontalAlignment="Right" />
+        </StackPanel>
+      </Border>
+    </Panel>
+  </ToolTip.Tip>
+
+  <LayoutTransformControl LayoutTransform="{Binding TapTransform}">
+    <Border Classes="frame" Classes.playable="{Binding Playable}" Classes.targetable="{Binding Targetable}"
+            Classes.selected="{Binding Selected}">
+      <Viewbox x:Name="Box" Stretch="Uniform">
+        <Panel Width="250" Height="349">
+          <Border CornerRadius="12" ClipToBounds="True" Background="#15111B">
+            <Panel>
+              <Image Source="{Binding Image}" IsVisible="{Binding HasImage}" Stretch="UniformToFill"
+                     RenderOptions.BitmapInterpolationMode="HighQuality" />
+              <!-- Sin imagen: un marco con el texto de la carta -->
+              <Border IsVisible="{Binding !HasImage}" Background="{Binding FrameBrush}" Padding="14,12"
+                      BorderBrush="#2A2230" BorderThickness="6" CornerRadius="12">
+                <DockPanel TextElement.Foreground="#241C2B">
+                  <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto">
+                    <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="24" TextWrapping="Wrap" MaxLines="2" />
+                    <TextBlock Grid.Column="1" Text="{Binding Cost}" FontSize="18" Margin="6,4,0,0" />
+                  </Grid>
+                  <TextBlock DockPanel.Dock="Top" Text="{Binding TypeLine}" FontStyle="Italic" FontSize="16" Margin="0,6,0,8"
+                             TextWrapping="Wrap" MaxLines="2" />
+                  <TextBlock Text="{Binding Text}" FontSize="17" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" />
+                </DockPanel>
+              </Border>
+            </Panel>
+          </Border>
+
+          <!-- Etiqueta arriba: ataca, bloquea, mareada… -->
+          <Border Classes="pill" IsVisible="{Binding HasBadge}" Background="#E0241C2B" BorderBrush="#F2C14E" BorderThickness="2"
+                  HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,118,0,0">
+            <TextBlock Text="{Binding Badge}" FontSize="22" FontWeight="Bold" Foreground="#F2C14E" />
+          </Border>
+
+          <!-- Daño marcado -->
+          <Border Classes="pill" IsVisible="{Binding HasDamage}" Background="#E6C0392B"
+                  HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="10,0,0,14">
+            <TextBlock Text="{Binding DamageText}" FontSize="26" FontWeight="Bold" Foreground="White" />
+          </Border>
+
+          <!-- Esquina: copias, costo en la zona de mando… -->
+          <Border Classes="pill" IsVisible="{Binding HasCorner}" Background="#E0241C2B"
+                  HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="10,0,0,14">
+            <TextBlock Text="{Binding Corner}" FontSize="24" FontWeight="Bold" Foreground="White" />
+          </Border>
+
+          <!-- Fuerza/resistencia actual cuando cambió o no hay imagen -->
+          <Border Classes="pill" IsVisible="{Binding ShowStatsOverlay}" Background="#F0F3EEDA" BorderBrush="#241C2B" BorderThickness="2"
+                  Classes.boosted="{Binding StatsBoosted}" Classes.reduced="{Binding StatsReduced}"
+                  HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,10,12" Padding="12,2">
+            <TextBlock Text="{Binding Stats}" FontSize="30" FontWeight="Black" Foreground="#241C2B" />
+          </Border>
+        </Panel>
+      </Viewbox>
+    </Border>
+  </LayoutTransformControl>
+</UserControl>

@@ -63,6 +63,28 @@ public class RoguelikeTests
     }
 
     [Fact]
+    public void CanPlayNowFollowsTimingManaAndTargets()
+    {
+        var g = NewGame();
+        g.AddToBattlefield(Me, "mountain");
+        var shock = g.AddToHand(Me, "shock");
+        var giant = g.AddToHand(Me, "hill-giant");
+        var verdict = g.AddToHand(Me, "divine-verdict");
+        var land = g.AddToHand(Me, "mountain");
+        Assert.True(g.CanPlayNow(Me, shock));
+        Assert.False(g.CanPlayNow(Me, giant)); // no alcanza el maná
+        Assert.False(g.CanPlayNow(Me, verdict)); // no hay ninguna criatura atacando ni bloqueando
+        Assert.True(g.CanPlayNow(Me, land));
+        g.PlayLand(land.Id);
+        Assert.False(g.CanPlayNow(Me, g.AddToHand(Me, "mountain")));
+
+        g.StartAt(Opp, Step.Main1);
+        g.PassPriority(); // prioridad para vos en el turno del rival
+        Assert.True(g.CanPlayNow(Me, shock));
+        Assert.False(g.CanPlayNow(Me, g.AddToHand(Me, "grizzly-bears")));
+    }
+
+    [Fact]
     public void DivineVerdictOnlyHitsAttackersOrBlockers()
     {
         var g = NewGame();

@@ -15,7 +15,7 @@ La app de escritorio (C#, .NET 8, Avalonia) permite:
 - Guardar y abrir partidas como archivos `.mtgparty`.
 - **Exportar HTML**: un único archivo que se manda al grupo y se abre en el navegador del celular, sin instalar nada. Lleva el contador de vidas, el turno y la ronda, los desafíos, las misiones secretas (se reparten al azar al abrirlo) y el dado planar.
 
-Todo el contenido es original. Es un proyecto de fans gratuito y no comercial, dentro de la Fan Content Policy de Wizards of the Coast.
+Los desafíos, misiones y planos del party game son originales. Los puzzles y el roguelike usan cartas reales de Magic. Es un proyecto de fans gratuito y no comercial, dentro de la Fan Content Policy de Wizards of the Coast; no está aprobado ni respaldado por Wizards. Magic: The Gathering y sus cartas son propiedad de Wizards of the Coast.
 
 ## Puzzles "ganá este turno" (etapa 2)
 
@@ -56,7 +56,21 @@ La IA del rival (`src/MtgEngine/Roguelike/DuelAI.cs`) decide cada jugada simulan
 - Zona de mando para los comandantes de los jefes, con el impuesto de {2} por cada vez que se lanzaron.
 - `Game.Clone()` copia la partida completa, para deshacer jugadas y para que la IA pruebe líneas.
 
-Las cartas son originales y están en `src/MtgEngine/Resources/cards.json`.
+## Cartas e imágenes
+
+Los puzzles y el roguelike usan 68 cartas reales de Magic (Choque, Osos pardos, Ángel de Serra, Ghalta…) con su nombre y texto oficial en español. Están en `src/MtgEngine/Resources/cards.json`, cada una con su nombre en inglés para buscar la imagen. Los ids viejos de las cartas inventadas de antes siguen funcionando como alias, así que las runs y los puzzles guardados se pueden seguir abriendo.
+
+Las imágenes se bajan de [Scryfall](https://scryfall.com) la primera vez que aparece cada carta (la impresión en español más nueva, o la inglesa si no hay) y quedan guardadas en la carpeta de datos del usuario (`%AppData%\MesaDelCaos\cartas` en Windows), así que después andan sin internet. Si no hay conexión, la carta se dibuja con su texto. Para probar sin internet se puede apuntar a otro servidor con la variable de entorno `MESADELCAOS_SCRYFALL`.
+
+## Interfaz de juego
+
+- El tablero está armado como una mesa: el rival arriba, vos abajo y tu mano al pie. Las tierras van más chicas a la derecha de cada lado.
+- Las cartas giradas se ven giradas. Encima de la carta se marca el daño, la fuerza y resistencia si cambiaron, y si ataca, bloquea o tiene mareo.
+- Pasando el mouse por una carta se ve grande.
+- En verde, lo que se puede jugar ahora (o las criaturas que pueden atacar o bloquear); en naranja, los objetivos válidos del hechizo que estás lanzando, incluidas las vidas de cada jugador.
+- La barra de fases muestra en qué paso del turno estás. En los duelos, un recuadro resume lo que pasó desde tu última jugada (lo que hizo el rival).
+- Atajos: Espacio o Enter para pasar o confirmar, Esc para cancelar el objetivo y Ctrl+Z para deshacer en los puzzles.
+- El tamaño de las cartas se ajusta con un deslizador y se recuerda entre sesiones.
 
 ## Cómo correrlo
 
@@ -79,8 +93,8 @@ Cada push a `main` corre los tests en GitHub Actions y publica una versión nuev
 | Carpeta | Qué hay |
 | --- | --- |
 | `src/MtgParty.Core` | Modelos, contenido por defecto (`Resources/default-cards.json`), plantilla HTML y exportador |
-| `src/MtgParty.Desktop` | App de escritorio Avalonia (configurador) |
+| `src/MtgParty.Desktop` | App de escritorio Avalonia: party game, puzzles, editor y roguelike; `Services/CardImages.cs` baja y guarda las imágenes |
 | `tests/MtgParty.Core.Tests` | Tests del exportador y del formato `.mtgparty` |
-| `src/MtgEngine` | Motor de reglas y catálogo de cartas originales |
+| `src/MtgEngine` | Motor de reglas y catálogo de cartas |
 | `src/MtgEngine/Roguelike` | IA rival, duelos completos y la run (draft, mapa, reliquias) |
 | `tests/MtgEngine.Tests` | Tests de maná, pila, combate, turnos, puzzles y roguelike |

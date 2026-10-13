@@ -6,32 +6,34 @@
              x:DataType="vm:RunViewModel">
   <UserControl.Resources>
     <DataTemplate x:Key="OfferTemplate" x:DataType="vm:OfferCardViewModel">
-      <Border Classes="offer" Classes.rare="{Binding IsRare}" Width="190" MinHeight="150" Margin="0,0,12,12">
-        <StackPanel Spacing="4">
-          <Grid ColumnDefinitions="*,Auto">
-            <TextBlock Text="{Binding Name}" FontWeight="Bold" TextWrapping="Wrap" />
-            <TextBlock Grid.Column="1" Text="{Binding Cost}" FontSize="11" Margin="4,0,0,0" />
-          </Grid>
-          <TextBlock Text="{Binding TypeLine}" FontSize="11" FontStyle="Italic" />
-          <TextBlock Text="{Binding Text}" FontSize="12" TextWrapping="Wrap" />
-          <TextBlock Text="{Binding Stats}" FontWeight="Bold" FontSize="15" HorizontalAlignment="Right" />
-        </StackPanel>
-      </Border>
+      <StackPanel Spacing="4" Margin="0,0,14,14">
+        <views:CardTile Scale="1.6" />
+        <TextBlock Text="{Binding RarityText}" HorizontalAlignment="Center" FontSize="12" FontWeight="Bold"
+                   Classes="rarity" Classes.rare="{Binding IsRare}" Classes.uncommon="{Binding IsUncommon}" />
+      </StackPanel>
+    </DataTemplate>
+    <DataTemplate x:Key="DeckTemplate" x:DataType="vm:OfferCardViewModel">
+      <views:CardTile Scale="0.85" Margin="0,0,6,6" />
     </DataTemplate>
   </UserControl.Resources>
 
   <UserControl.Styles>
-    <Style Selector="Border.offer">
-      <Setter Property="Background" Value="#EFE3C8" />
-      <Setter Property="BorderBrush" Value="#BFAE8A" />
-      <Setter Property="BorderThickness" Value="2" />
-      <Setter Property="CornerRadius" Value="8" />
-      <Setter Property="Padding" Value="10" />
-      <Setter Property="TextElement.Foreground" Value="#2B2131" />
+    <Style Selector="TextBlock.rarity">
+      <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
     </Style>
-    <Style Selector="Border.offer.rare">
-      <Setter Property="BorderBrush" Value="#D4A64A" />
-      <Setter Property="BorderThickness" Value="3" />
+    <Style Selector="TextBlock.rarity.uncommon">
+      <Setter Property="Foreground" Value="#B9CDE0" />
+    </Style>
+    <Style Selector="TextBlock.rarity.rare">
+      <Setter Property="Foreground" Value="{StaticResource GoldBrush}" />
+    </Style>
+    <Style Selector="Button.pick">
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <Style Selector="Button.pick:pointerover /template/ ContentPresenter, Button.pick:pressed /template/ ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
     </Style>
     <Style Selector="ToggleButton.color">
       <Setter Property="Width" Value="170" />
@@ -112,15 +114,14 @@
             <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:OfferCardViewModel">
-                <Button Padding="0" Background="Transparent" BorderThickness="0"
-                        Command="{Binding Owner.PickCommand}" CommandParameter="{Binding}"
+                <Button Classes="pick" Command="{Binding Owner.PickCommand}" CommandParameter="{Binding}"
                         ContentTemplate="{StaticResource OfferTemplate}" Content="{Binding}" />
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
           <Button Content="Saltear" Command="{Binding SkipPickCommand}" IsVisible="{Binding CanSkipPick}" />
           <Expander Header="Ver tu mazo" Margin="0,8,0,0">
-            <ItemsControl ItemsSource="{Binding DeckList}" ItemTemplate="{StaticResource OfferTemplate}">
+            <ItemsControl ItemsSource="{Binding DeckList}" ItemTemplate="{StaticResource DeckTemplate}">
               <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
             </ItemsControl>
           </Expander>
@@ -149,7 +150,10 @@
               <ItemsControl ItemsSource="{Binding DeckList}">
                 <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="vm:OfferCardViewModel">
-                    <TextBlock Margin="0,0,0,2" ToolTip.Tip="{Binding Text}"><Run Text="{Binding Name}" /><Run Text="  " /><Run Text="{Binding Cost}" Foreground="{StaticResource MutedBrush}" /></TextBlock>
+                    <TextBlock Margin="0,0,0,2" Background="Transparent">
+                      <ToolTip.Tip><views:CardTile Scale="2.2" /></ToolTip.Tip>
+                      <Run Text="{Binding ListName}" /><Run Text="  " /><Run Text="{Binding Cost}" Foreground="{StaticResource MutedBrush}" />
+                    </TextBlock>
                   </DataTemplate>
                 </ItemsControl.ItemTemplate>
               </ItemsControl>
@@ -175,9 +179,8 @@
             <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:OfferCardViewModel">
-                <Button Padding="0" Background="Transparent" BorderThickness="0"
-                        Command="{Binding Owner.RemoveCardCommand}" CommandParameter="{Binding}"
-                        ContentTemplate="{StaticResource OfferTemplate}" Content="{Binding}" />
+                <Button Classes="pick" Command="{Binding Owner.RemoveCardCommand}" CommandParameter="{Binding}" Margin="0,0,8,8"
+                        ContentTemplate="{StaticResource DeckTemplate}" Content="{Binding}" />
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>

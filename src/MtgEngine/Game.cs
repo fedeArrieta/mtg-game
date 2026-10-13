@@ -125,6 +125,23 @@ public sealed class Game
     /// <summary>Si el jugador con prioridad puede lanzar a velocidad de conjuro ahora.</summary>
     public bool CanActAtSorcerySpeed => IsMainPhase && Stack.Count == 0 && PriorityPlayer == ActivePlayer && Awaiting == Pending.None;
 
+    /// <summary>
+    /// Si el jugador podría jugar ahora esta carta de su mano o de la zona de mando: es su momento, le alcanza el maná
+    /// y, si pide objetivo, hay alguno válido. Sirve para resaltar las cartas jugables.
+    /// </summary>
+    public bool CanPlayNow(int player, CardInstance card)
+    {
+        if (IsOver || PriorityPlayer != player || Awaiting != Pending.None) return false;
+        bool sorcerySpeed = CanActAtSorcerySpeed && ActivePlayer == player;
+        if (card.IsLand) return sorcerySpeed && !Players[player].LandPlayedThisTurn && Players[player].Hand.Contains(card);
+        var def = card.Definition;
+        if (!CanCastSpells(player) || (def.Type != CardType.Instant && !sorcerySpeed)) return false;
+        if (!CanAfford(player, CostOf(card))) return false;
+        if (def.Target == TargetKind.None) return true;
+        return Players.Any(p => IsLegalTarget(def, Target.OfPlayer(p.Index), player))
+            || Creatures().Any(c => IsLegalTarget(def, Target.OfCard(c.Id), player));
+    }
+
     // ---------- Acciones del jugador con prioridad ----------
 
     public void PlayLand(int cardId)

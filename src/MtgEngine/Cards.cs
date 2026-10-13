@@ -53,7 +53,7 @@ public sealed class CardDefinition
     [JsonIgnore] public bool IsSpell => Type is CardType.Instant or CardType.Sorcery;
 }
 
-/// <summary>Las cartas originales del juego, cargadas de Resources/cards.json.</summary>
+/// <summary>Las cartas del juego (cartas reales de Magic), cargadas de Resources/cards.json.</summary>
 public static class CardCatalog
 {
     public static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)

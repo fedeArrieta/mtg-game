@@ -4,5 +4,9 @@ namespace MtgParty.Desktop.Views;
 
 public partial class DuelView : UserControl
 {
-    public DuelView() => InitializeComponent();
+    public DuelView()
+    {
+        InitializeComponent();
+        BoardFocus.Attach(this);
+    }
 }
