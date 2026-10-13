@@ -108,13 +108,39 @@ public sealed class Game
         p.Library.Concat(p.Hand).Concat(p.Battlefield).Concat(p.Graveyard).Concat(p.Command);
 
     /// <summary>Lo que cuesta lanzar la carta ahora, con el impuesto si es un comandante.</summary>
-    public static ManaCost CostOf(CardInstance c) =>
-        c.IsCommander ? c.Definition.ManaCost.PlusGeneric(2 * c.CommanderCasts) : c.Definition.ManaCost;
+    public ManaCost CostOf(CardInstance c)
+    {
+        var cost = c.IsCommander ? c.Definition.ManaCost.PlusGeneric(2 * c.CommanderCasts) : c.Definition.ManaCost;
+        if (c.Definition.Statics.Contains(StaticAbility.CostReducedByTotalPower))
+            cost = cost.PlusGeneric(-Math.Min(cost.Generic, Players[c.Owner].Battlefield.Where(x => x.IsCreature).Sum(x => Math.Max(0, x.Power))));
+        return cost;
+    }
+
+    /// <summary>Si el jugador puede lanzar hechizos ahora (Drómoka lo impide en el turno de su controlador).</summary>
+    public bool CanCastSpells(int player) =>
+        player == ActivePlayer || !Active.Battlefield.Any(c => c.Definition.Statics.Contains(StaticAbility.OpponentsCantCastOnYourTurn));
 
     public bool IsMainPhase => Step is Step.Main1 or Step.Main2;
 
     /// <summary>Si el jugador con prioridad puede lanzar a velocidad de conjuro ahora.</summary>
     public bool CanActAtSorcerySpeed => IsMainPhase && Stack.Count == 0 && PriorityPlayer == ActivePlayer && Awaiting == Pending.None;
+
+    /// <summary>
+    /// Si el jugador podría jugar ahora esta carta de su mano o de la zona de mando: es su momento, le alcanza el maná
+    /// y, si pide objetivo, hay alguno válido. Sirve para resaltar las cartas jugables.
+    /// </summary>
+    public bool CanPlayNow(int player, CardInstance card)
+    {
+        if (IsOver || PriorityPlayer != player || Awaiting != Pending.None) return false;
+        bool sorcerySpeed = CanActAtSorcerySpeed && ActivePlayer == player;
+        if (card.IsLand) return sorcerySpeed && !Players[player].LandPlayedThisTurn && Players[player].Hand.Contains(card);
+        var def = card.Definition;
+        if (!CanCastSpells(player) || (def.Type != CardType.Instant && !sorcerySpeed)) return false;
+        if (!CanAfford(player, CostOf(card))) return false;
+        if (def.Target == TargetKind.None) return true;
+        return Players.Any(p => IsLegalTarget(def, Target.OfPlayer(p.Index), player))
+            || Creatures().Any(c => IsLegalTarget(def, Target.OfCard(c.Id), player));
+    }
 
     // ---------- Acciones del jugador con prioridad ----------
 
@@ -142,6 +168,7 @@ public sealed class Game
         var land = p.Battlefield.FirstOrDefault(c => c.Id == permanentId) ?? throw new RulesException("Esa tierra no es tuya o no está en juego.");
         if (land.Definition.Produces is not { } color) throw new RulesException($"{land.Name} no produce maná.");
         if (land.Tapped) throw new RulesException($"{land.Name} ya está girada.");
+        if (land.IsCreature && !land.CanTapToAttack) throw new RulesException($"{land.Name} tiene mareo de invocación.");
         land.Tapped = true;
         p.Pool.Add(color);
     }
@@ -178,7 +205,9 @@ public sealed class Game
     static List<CardInstance>? PlanLandsFor(PlayerState p, ManaCost cost)
     {
         var pool = p.Pool.Clone();
-        var untapped = p.Battlefield.Where(c => c.Definition.Produces is not null && !c.Tapped).ToList();
+        // Primero las tierras y después las criaturas de maná, para no girar atacantes si no hace falta.
+        var untapped = p.Battlefield.Where(c => c.Definition.Produces is not null && !c.Tapped && (!c.IsCreature || c.CanTapToAttack))
+            .OrderBy(c => c.IsCreature).ToList();
         var chosen = new List<CardInstance>();
         foreach (var color in Enum.GetValues<Color>())
         {
@@ -191,7 +220,7 @@ public sealed class Game
             }
         }
         // Para el genérico se gastan primero las tierras cuyo color hay más.
-        var spare = untapped.GroupBy(l => l.Definition.Produces).OrderByDescending(g => g.Count()).SelectMany(g => g).ToList();
+        var spare = untapped.GroupBy(l => (l.IsCreature, l.Definition.Produces)).OrderBy(g => g.Key.IsCreature).ThenByDescending(g => g.Count()).SelectMany(g => g).ToList();
         foreach (var land in spare)
         {
             if (pool.CanPay(cost)) break;
@@ -212,10 +241,12 @@ public sealed class Game
         if (def.IsPermanent && def.Type == CardType.Land) throw new RulesException("Las tierras no se lanzan: se juegan.");
         if (def.Type != CardType.Instant && !CanActAtSorcerySpeed)
             throw new RulesException($"{card.Name} solo se puede lanzar en tu fase principal, con la pila vacía.");
+        if (!CanCastSpells(p.Index))
+            throw new RulesException("No podés lanzar hechizos durante el turno del rival mientras controle a Drómoka.");
         if (def.Target != TargetKind.None)
         {
             if (target is null) throw new RulesException($"{card.Name} necesita un objetivo.");
-            if (!IsLegalTarget(def.Target, target.Value)) throw new RulesException("Ese objetivo no es válido para este hechizo.");
+            if (!IsLegalTarget(def, target.Value, p.Index)) throw new RulesException("Ese objetivo no es válido para este hechizo.");
         }
         else target = null;
         if (!p.Pool.Pay(cost))
@@ -315,7 +346,7 @@ public sealed class Game
         var owner = Players[card.Owner];
         var def = card.Definition;
 
-        if (def.Target != TargetKind.None && (item.Target is not { } t || !IsLegalTarget(def.Target, t)))
+        if (def.Target != TargetKind.None && (item.Target is not { } t || !IsLegalTarget(def, t, item.Controller)))
         {
             Log($"{card.Name} no tiene un objetivo válido y se neutraliza.");
             card.Zone = Zone.Graveyard;
@@ -344,13 +375,19 @@ public sealed class Game
         CheckStateBasedActions();
     }
 
-    public bool IsLegalTarget(TargetKind kind, Target t) => kind switch
+    /// <summary>Si el objetivo es válido para el hechizo lanzado por <paramref name="caster"/>.</summary>
+    public bool IsLegalTarget(CardDefinition spell, Target t, int caster)
     {
-        TargetKind.Any => t.IsPlayer ? IsPlayerIndex(t.Player!.Value) : FindOnBattlefield(t.Card ?? -1)?.IsCreature == true,
-        TargetKind.Creature => t.IsCard && FindOnBattlefield(t.Card!.Value)?.IsCreature == true,
-        TargetKind.Player => t.IsPlayer && IsPlayerIndex(t.Player!.Value),
-        _ => false,
-    };
+        if (t.IsPlayer) return spell.Target is TargetKind.Any or TargetKind.Player && IsPlayerIndex(t.Player!.Value);
+        if (spell.Target is not (TargetKind.Any or TargetKind.Creature)) return false;
+        if (FindOnBattlefield(t.Card ?? -1) is not { IsCreature: true } c) return false;
+        if (c.Has(Keyword.Hexproof) && c.Controller != caster) return false;
+        return spell.TargetRestriction switch
+        {
+            TargetRestriction.AttackingOrBlocking => Combat.Any(a => a.AttackerId == c.Id || a.BlockerIds.Contains(c.Id)),
+            _ => true,
+        };
+    }
 
     static bool IsPlayerIndex(int i) => i is 0 or 1;
 

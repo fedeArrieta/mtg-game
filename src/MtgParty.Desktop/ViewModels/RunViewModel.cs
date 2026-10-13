@@ -17,22 +17,16 @@ public partial class ColorChoiceViewModel(Color color, string name, string hint)
 }
 
 /// <summary>Una carta para elegir en el draft o la recompensa, o para sacar del mazo en el descanso.</summary>
-public sealed class OfferCardViewModel(string cardId, RunViewModel owner, int count = 1)
+public sealed class OfferCardViewModel(string cardId, RunViewModel owner, int count = 1) : CardTileViewModel(CardCatalog.Get(cardId))
 {
-    readonly CardDefinition def = CardCatalog.Get(cardId);
     public string Id => cardId;
-    public string Name => count > 1 ? $"{def.Name} ×{count}" : def.Name;
-    public string Cost => def.ManaCost.ToString();
-    public string TypeLine => def.Type switch
-    {
-        CardType.Creature => "Criatura",
-        CardType.Instant => "Instantáneo",
-        CardType.Sorcery => "Conjuro",
-        _ => "Tierra",
-    } + " · " + RunContent.RarityOf(cardId) switch { Rarity.Rare => "rara", Rarity.Uncommon => "infrecuente", _ => "común" };
-    public string Text => def.Text;
-    public string Stats => def.Type == CardType.Creature ? $"{def.Power}/{def.Toughness}" : "";
-    public bool IsRare => RunContent.RarityOf(cardId) == Rarity.Rare;
+    public int Count => count;
+    public override string Corner => count > 1 ? $"×{count}" : "";
+    public string ListName => count > 1 ? $"{Definition.Name} ×{count}" : Definition.Name;
+    public Rarity Rarity => RunContent.RarityOf(cardId);
+    public string RarityText => Rarity switch { Rarity.Rare => "Rara", Rarity.Uncommon => "Infrecuente", _ => "Común" };
+    public bool IsRare => Rarity == Rarity.Rare;
+    public bool IsUncommon => Rarity == Rarity.Uncommon;
     public RunViewModel Owner => owner;
 }
 

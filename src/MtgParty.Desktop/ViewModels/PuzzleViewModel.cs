@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MtgEngine;
 using MtgEngine.Puzzles;
+using MtgParty.Desktop.Services;
 
 namespace MtgParty.Desktop.ViewModels;
 
@@ -17,44 +18,24 @@ public partial class PuzzleItemViewModel(Puzzle puzzle, bool isCustom = false) :
     [ObservableProperty] bool solved;
 }
 
-public enum CardPlace { Hand, YourLands, YourCreatures, OpponentCreatures }
-
-/// <summary>Una carta en el tablero, tal como se dibuja.</summary>
-public partial class CardViewModel(CardInstance card, CardPlace place, PuzzleViewModel owner) : ObservableObject
-{
-    public CardInstance Card { get; } = card;
-    public CardPlace Place { get; } = place;
-    public string Name => Card.Name;
-    public string Cost => Card.IsLand ? "" : Card.Definition.ManaCost.ToString();
-    public string Stats => Card.IsCreature ? $"{Card.Power}/{Card.Toughness - Card.Damage}" : "";
-    public string Text => string.IsNullOrEmpty(Card.Definition.Text) ? "" : Card.Definition.Text;
-    public string State =>
-        string.Join(" · ", new[]
-        {
-            Card.Tapped ? "girada" : null,
-            Card.IsCreature && Card.SummoningSick && !Card.Has(Keyword.Haste) && Place != CardPlace.Hand ? "mareo" : null,
-            Card.Damage > 0 ? $"{Card.Damage} de daño" : null,
-        }.Where(s => s is not null));
-    public double Opacity => Card.Tapped ? 0.55 : 1;
-    [ObservableProperty] bool selected;
-
-    [RelayCommand] void Click() => owner.OnCardClicked(this);
-}
-
 /// <summary>Pantalla de puzzles: lista, tablero y controles. Vos jugás; el rival bloquea solo.</summary>
 public partial class PuzzleViewModel : ObservableObject
 {
     readonly SolvedStore? solvedStore = new();
     PuzzleSession? session;
     CardInstance? pendingCast;
+    /// <summary>Las criaturas marcadas para atacar (sobreviven a que se redibuje el tablero).</summary>
+    readonly HashSet<int> selectedAttackers = [];
 
     public ObservableCollection<PuzzleItemViewModel> Puzzles { get; } = [];
-    public ObservableCollection<CardViewModel> Hand { get; } = [];
-    public ObservableCollection<CardViewModel> YourLands { get; } = [];
-    public ObservableCollection<CardViewModel> YourCreatures { get; } = [];
-    public ObservableCollection<CardViewModel> OpponentCreatures { get; } = [];
-    public ObservableCollection<string> Stack { get; } = [];
+    public ObservableCollection<BoardCardViewModel> Hand { get; } = [];
+    public ObservableCollection<BoardCardViewModel> YourLands { get; } = [];
+    public ObservableCollection<BoardCardViewModel> YourCreatures { get; } = [];
+    public ObservableCollection<BoardCardViewModel> EnemyLands { get; } = [];
+    public ObservableCollection<BoardCardViewModel> EnemyCreatures { get; } = [];
+    public ObservableCollection<StackEntry> Stack { get; } = [];
     public ObservableCollection<string> Log { get; } = [];
+    public UiSettings Ui => UiSettings.Instance;
 
     [ObservableProperty] PuzzleItemViewModel? selected;
     [ObservableProperty] string title = "";
@@ -72,6 +53,11 @@ public partial class PuzzleViewModel : ObservableObject
     [ObservableProperty] bool isFailed;
     [ObservableProperty] bool canUndo;
     [ObservableProperty] string passLabel = "Pasar";
+    [ObservableProperty] List<PhaseChip> phases = [];
+    [ObservableProperty] bool youTargetable;
+    [ObservableProperty] bool enemyTargetable;
+    [ObservableProperty] string yourInfo = "";
+    [ObservableProperty] bool hasStack;
 
     public PuzzleViewModel()
     {
@@ -99,6 +85,9 @@ public partial class PuzzleViewModel : ObservableObject
     {
         if (value is null) return;
         session = new PuzzleSession(value.Puzzle);
+        pendingCast = null;
+        IsTargeting = false;
+        selectedAttackers.Clear();
         Title = value.Puzzle.Title;
         Description = value.Puzzle.Description;
         Say("Ganá antes de que termine este turno.");
@@ -123,7 +112,7 @@ public partial class PuzzleViewModel : ObservableObject
     {
         if (IsDeclaringAttackers)
         {
-            Act(s => s.DeclareAttackers(YourCreatures.Where(c => c.Selected).Select(c => c.Card.Id).ToList()));
+            Act(s => s.DeclareAttackers(selectedAttackers.ToList()));
             return;
         }
         Act(s => s.Pass());
@@ -168,21 +157,25 @@ public partial class PuzzleViewModel : ObservableObject
     {
         pendingCast = null;
         IsTargeting = false;
-        UpdatePrompt();
+        if (session is not null) Refresh();
     }
 
-    internal void OnCardClicked(CardViewModel card)
+    internal void OnCardClicked(BoardCardViewModel card)
     {
         if (session is null) return;
         if (IsTargeting)
         {
-            if (card.Card.IsCreature && card.Place is CardPlace.YourCreatures or CardPlace.OpponentCreatures)
+            if (card.Card.IsCreature && card.Place is CardPlace.YourCreatures or CardPlace.EnemyCreatures)
                 CastPending(Target.OfCard(card.Card.Id));
             return;
         }
         if (IsDeclaringAttackers)
         {
-            if (card.Place == CardPlace.YourCreatures) card.Selected = !card.Selected;
+            if (card.Place == CardPlace.YourCreatures && card.Playable)
+            {
+                if (!selectedAttackers.Remove(card.Card.Id)) selectedAttackers.Add(card.Card.Id);
+                card.Selected = selectedAttackers.Contains(card.Card.Id);
+            }
             return;
         }
         switch (card.Place)
@@ -193,7 +186,8 @@ public partial class PuzzleViewModel : ObservableObject
             case CardPlace.Hand when card.Card.Definition.Target != TargetKind.None:
                 pendingCast = card.Card;
                 IsTargeting = true;
-                UpdatePrompt();
+                Say("");
+                Refresh();
                 break;
             case CardPlace.Hand:
                 Act(s => s.Cast(card.Card.Id));
@@ -244,25 +238,38 @@ public partial class PuzzleViewModel : ObservableObject
         var opp = g.Players[Puzzle.Opp];
         YourLife = you.Life;
         OpponentLife = opp.Life;
-        Mana = you.Pool.Total == 0 ? "Sin maná flotante" : $"Maná flotante: {you.Pool}";
+        YourInfo = $"Mano: {you.Hand.Count}\nBiblioteca: {you.Library.Count}\nCementerio: {you.Graveyard.Count}";
+        Mana = you.Pool.Total == 0 ? "" : $"Maná flotante: {you.Pool}";
         StepText = PuzzleSolver.StepName(g.Step);
-
-        Fill(Hand, you.Hand, CardPlace.Hand);
-        Fill(YourLands, you.Battlefield.Where(c => c.IsLand), CardPlace.YourLands);
-        Fill(YourCreatures, you.Battlefield.Where(c => c.IsCreature), CardPlace.YourCreatures);
-        Fill(OpponentCreatures, opp.Battlefield.Where(c => c.IsCreature), CardPlace.OpponentCreatures);
-
-        Stack.Clear();
-        foreach (var item in Enumerable.Reverse(g.Stack))
-            Stack.Add(item.Target is { } t ? $"{item.Card.Name} → {DescribeTarget(g, t)}" : item.Card.Name);
-
-        Log.Clear();
-        foreach (var line in g.History.TakeLast(12)) Log.Add(line);
+        Phases = PhaseChip.For(g.Step);
 
         IsDeclaringAttackers = session.Status == PuzzleStatus.Playing && g.Awaiting == Game.Pending.Attackers;
+        if (!IsDeclaringAttackers) selectedAttackers.Clear();
         IsWon = session.Status == PuzzleStatus.Won;
         IsFailed = session.Status == PuzzleStatus.Failed;
         CanUndo = session.CanUndo;
+
+        var attacking = g.Combat.ToDictionary(a => a.AttackerId);
+        string Note(CardInstance c) =>
+            attacking.ContainsKey(c.Id) ? "Ataca"
+            : g.Combat.Any(a => a.BlockerIds.Contains(c.Id)) ? "Bloquea"
+            : "";
+        Fill(Hand, you.Hand, CardPlace.Hand, _ => "");
+        Fill(YourLands, you.Battlefield.Where(c => !c.IsCreature), CardPlace.YourLands, _ => "");
+        Fill(YourCreatures, you.Battlefield.Where(c => c.IsCreature), CardPlace.YourCreatures, Note);
+        Fill(EnemyLands, opp.Battlefield.Where(c => !c.IsCreature), CardPlace.EnemyLands, _ => "");
+        Fill(EnemyCreatures, opp.Battlefield.Where(c => c.IsCreature), CardPlace.EnemyCreatures, Note);
+        Highlight(g);
+
+        Stack.Clear();
+        foreach (var item in Enumerable.Reverse(g.Stack))
+            Stack.Add(new StackEntry(new CardTileViewModel(item.Card.Definition),
+                item.Target is { } t ? $"{item.Card.Name} → {DescribeTarget(g, t)}" : item.Card.Name));
+        HasStack = Stack.Count > 0;
+
+        Log.Clear();
+        foreach (var line in g.History.TakeLast(40).Reverse()) Log.Add(line);
+
         PassLabel = IsDeclaringAttackers ? "Confirmar ataque"
             : g.Stack.Count > 0 ? "Resolver la pila"
             : "Pasar al siguiente paso";
@@ -276,19 +283,46 @@ public partial class PuzzleViewModel : ObservableObject
         UpdatePrompt();
     }
 
+    /// <summary>Resalta lo que se puede tocar ahora: cartas jugables, atacantes posibles u objetivos válidos.</summary>
+    void Highlight(Game g)
+    {
+        const int me = Puzzle.You0;
+        if (IsTargeting && pendingCast is { } spell)
+        {
+            var def = spell.Definition;
+            foreach (var c in YourCreatures.Concat(EnemyCreatures))
+                c.Targetable = g.IsLegalTarget(def, Target.OfCard(c.Card.Id), me);
+            YouTargetable = g.IsLegalTarget(def, Target.OfPlayer(me), me);
+            EnemyTargetable = g.IsLegalTarget(def, Target.OfPlayer(Puzzle.Opp), me);
+            foreach (var c in Hand) c.Selected = c.Card.Id == spell.Id;
+            return;
+        }
+        YouTargetable = EnemyTargetable = false;
+        if (IsDeclaringAttackers)
+        {
+            foreach (var c in YourCreatures)
+            {
+                c.Playable = c.Card.CanTapToAttack && !c.Card.Has(Keyword.Defender);
+                c.Selected = selectedAttackers.Contains(c.Card.Id);
+            }
+            return;
+        }
+        if (session!.Status != PuzzleStatus.Playing) return;
+        foreach (var c in Hand) c.Playable = g.CanPlayNow(me, c.Card);
+    }
     void UpdatePrompt()
     {
         Prompt = IsWon ? "¡Ganaste! El rival no tiene más vidas."
             : IsFailed ? "Se terminó el turno y el rival sigue en pie. Deshacé o reiniciá para probar otra línea."
-            : IsTargeting ? $"Elegí un objetivo para {pendingCast?.Name}: una criatura, el rival o vos."
-            : IsDeclaringAttackers ? "Tocá las criaturas que atacan y confirmá el ataque."
-            : "Tocá una carta de tu mano para jugarla o una tierra para girarla.";
+            : IsTargeting ? $"Elegí un objetivo para {pendingCast?.Name}: lo que está resaltado en naranja. Esc cancela."
+            : IsDeclaringAttackers ? "Tocá las criaturas que atacan y confirmá el ataque (Espacio)."
+            : "Las cartas en verde se pueden jugar ahora. Tocá una tierra para girarla a mano.";
     }
 
-    void Fill(ObservableCollection<CardViewModel> target, IEnumerable<CardInstance> cards, CardPlace place)
+    void Fill(ObservableCollection<BoardCardViewModel> target, IEnumerable<CardInstance> cards, CardPlace place, Func<CardInstance, string> note)
     {
         target.Clear();
-        foreach (var c in cards) target.Add(new CardViewModel(c, place, this));
+        foreach (var c in cards) target.Add(new BoardCardViewModel(c, place, OnCardClicked, note(c)));
     }
 
     static string DescribeTarget(Game g, Target t) =>

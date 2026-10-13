@@ -77,7 +77,7 @@ public static class PuzzleSolver
                 continue;
             }
             foreach (var (target, name) in Targets(g))
-                if (g.IsLegalTarget(def.Target, target))
+                if (g.IsLegalTarget(def, target, Puzzle.You0))
                     yield return new PuzzleMove($"Lanzar {card.Name} sobre {name}", s => s.Cast(card.Id, target));
         }
 

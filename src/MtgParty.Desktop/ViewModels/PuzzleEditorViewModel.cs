@@ -9,6 +9,9 @@ namespace MtgParty.Desktop.ViewModels;
 /// <summary>Una carta del catálogo, para elegirla en el editor.</summary>
 public sealed record CatalogCard(CardDefinition Definition)
 {
+    CardTileViewModel? tile;
+    /// <summary>La carta dibujada, para la vista previa (se crea recién cuando se muestra).</summary>
+    public CardTileViewModel Tile => tile ??= new(Definition);
     public string Label => Definition.Type == CardType.Land
         ? Definition.Name
         : $"{Definition.Name}  {Definition.ManaCost}";
@@ -25,6 +28,7 @@ public partial class EditorCardViewModel(CardDefinition definition, bool onBattl
         ? $"{Definition.ManaCost} · {Definition.Power}/{Definition.Toughness}"
         : Definition.Type == CardType.Land ? "Tierra" : Definition.ManaCost.ToString();
     public bool CanBeSick => OnBattlefield && Definition.Type == CardType.Creature;
+    public CardTileViewModel Tile { get; } = new(definition);
     [ObservableProperty] bool tapped;
     [ObservableProperty] bool sick;
 }
@@ -125,7 +129,7 @@ public partial class PuzzleEditorViewModel : ObservableObject
     {
         zone.Clear();
         foreach (var c in cards)
-            if (CardCatalog.All.TryGetValue(c.Card, out var def))
+            if (CardCatalog.TryGet(c.Card, out var def))
                 zone.Add(new EditorCardViewModel(def, onBattlefield) { Tapped = c.Tapped, Sick = c.Sick });
     }
 

@@ -12,33 +12,137 @@ public class RoguelikeTests
     public void CommanderIsCastFromTheCommandZoneAndReturnsWithTax()
     {
         var g = NewGame();
-        var thornak = g.AddCommander(Me, "thornak");
-        g.AddMana(Me, "bosque", "bosque", "bosque", "bosque", "bosque");
-        g.Cast(thornak.Id);
+        var yargle = g.AddCommander(Me, "yargle");
+        g.AddMana(Me, "swamp", "swamp", "swamp", "swamp", "swamp");
+        g.Cast(yargle.Id);
         g.BothPass();
-        Assert.Contains(thornak, g.Players[Me].Battlefield);
-        Assert.Equal(2, g.Players[Me].Battlefield.Count(c => c.IsCreature)); // y el lobo que trae
+        Assert.Contains(yargle, g.Players[Me].Battlefield);
 
-        g.AddMana(Me, "pantano", "pantano", "pantano");
-        g.Cast(g.AddToHand(Me, "fin-sombrio").Id, Target.OfCard(thornak.Id));
+        g.AddMana(Me, "swamp", "swamp", "swamp");
+        g.Cast(g.AddToHand(Me, "murder").Id, Target.OfCard(yargle.Id));
         g.BothPass();
-        Assert.Contains(thornak, g.Players[Me].Command);
+        Assert.Contains(yargle, g.Players[Me].Command);
         Assert.DoesNotContain(g.Players[Me].Graveyard, c => c.IsCommander);
-        Assert.Equal("{5}{G}{G}", Game.CostOf(thornak).ToString());
+        Assert.Equal("{6}{B}", g.CostOf(yargle).ToString());
+    }
+
+    [Fact]
+    public void GhaltaCostsLessForEachPointOfPowerYouControl()
+    {
+        var g = NewGame();
+        var ghalta = g.AddCommander(Me, "ghalta");
+        Assert.Equal("{10}{G}{G}", g.CostOf(ghalta).ToString());
+        g.AddToBattlefield(Me, "colossal-dreadmaw");
+        g.AddToBattlefield(Me, "grizzly-bears");
+        Assert.Equal("{2}{G}{G}", g.CostOf(ghalta).ToString());
+        g.AddToBattlefield(Me, "ancient-brontodon");
+        Assert.Equal("{G}{G}", g.CostOf(ghalta).ToString());
+    }
+
+    [Fact]
+    public void HexproofOnlyStopsTheOpponentsSpells()
+    {
+        var g = NewGame();
+        var sigarda = g.AddToBattlefield(Opp, "sigarda");
+        g.AddMana(Me, "swamp", "swamp", "swamp");
+        Assert.Throws<RulesException>(() => g.Cast(g.AddToHand(Me, "murder").Id, Target.OfCard(sigarda.Id)));
+        Assert.True(g.IsLegalTarget(CardCatalog.Get("giant-growth"), Target.OfCard(sigarda.Id), Opp));
+    }
+
+    [Fact]
+    public void DromokaStopsYouFromCastingDuringItsTurn()
+    {
+        var g = NewGame();
+        g.AddToBattlefield(Opp, "dromoka");
+        g.StartAt(Opp, Step.Main1);
+        g.PassPriority(); // prioridad para vos en el turno del rival
+        g.AddMana(Me, "mountain");
+        Assert.Throws<RulesException>(() => g.Cast(g.AddToHand(Me, "shock").Id, Target.OfPlayer(Opp)));
+        Assert.False(g.CanCastSpells(Me));
+        Assert.True(g.CanCastSpells(Opp));
+    }
+
+    [Fact]
+    public void CanPlayNowFollowsTimingManaAndTargets()
+    {
+        var g = NewGame();
+        g.AddToBattlefield(Me, "mountain");
+        var shock = g.AddToHand(Me, "shock");
+        var giant = g.AddToHand(Me, "hill-giant");
+        var verdict = g.AddToHand(Me, "divine-verdict");
+        var land = g.AddToHand(Me, "mountain");
+        Assert.True(g.CanPlayNow(Me, shock));
+        Assert.False(g.CanPlayNow(Me, giant)); // no alcanza el maná
+        Assert.False(g.CanPlayNow(Me, verdict)); // no hay ninguna criatura atacando ni bloqueando
+        Assert.True(g.CanPlayNow(Me, land));
+        g.PlayLand(land.Id);
+        Assert.False(g.CanPlayNow(Me, g.AddToHand(Me, "mountain")));
+
+        g.StartAt(Opp, Step.Main1);
+        g.PassPriority(); // prioridad para vos en el turno del rival
+        Assert.True(g.CanPlayNow(Me, shock));
+        Assert.False(g.CanPlayNow(Me, g.AddToHand(Me, "grizzly-bears")));
+    }
+
+    [Fact]
+    public void DivineVerdictOnlyHitsAttackersOrBlockers()
+    {
+        var g = NewGame();
+        var bear = g.AddToBattlefield(Opp, "grizzly-bears");
+        Assert.False(g.IsLegalTarget(CardCatalog.Get("divine-verdict"), Target.OfCard(bear.Id), Me));
+        g.StartAt(Opp, Step.DeclareAttackers);
+        g.DeclareAttackers([bear.Id]);
+        Assert.True(g.IsLegalTarget(CardCatalog.Get("divine-verdict"), Target.OfCard(bear.Id), Me));
+    }
+
+    [Fact]
+    public void LlanowarElvesMakeManaOnceTheyLoseSummoningSickness()
+    {
+        var g = NewGame();
+        var sick = g.AddToBattlefield(Me, "llanowar-elves", summoningSick: true);
+        Assert.Throws<RulesException>(() => g.TapForMana(sick.Id));
+        var elves = g.AddToBattlefield(Me, "llanowar-elves");
+        g.AddToBattlefield(Me, "forest");
+        Assert.True(g.CanAfford(Me, ManaCost.Parse("{G}{G}")));
+        g.CastWithAutoTap(g.AddToHand(Me, "kalonian-tusker").Id);
+        Assert.True(elves.Tapped);
+    }
+
+    [Fact]
+    public void VolcanicFalloutHitsEveryCreatureAndEveryPlayer()
+    {
+        var g = NewGame();
+        g.AddToBattlefield(Me, "grizzly-bears");
+        g.AddToBattlefield(Opp, "canopy-spider");
+        g.AddMana(Me, "mountain", "mountain", "mountain");
+        g.Cast(g.AddToHand(Me, "volcanic-fallout").Id);
+        g.BothPass();
+        Assert.Equal(18, g.Players[Me].Life);
+        Assert.Equal(18, g.Players[Opp].Life);
+        Assert.DoesNotContain(g.Players[Me].Battlefield, c => c.IsCreature);
+        Assert.Single(g.Players[Opp].Battlefield, c => c.IsCreature);
+    }
+
+    [Fact]
+    public void OldCardIdsStillWork()
+    {
+        Assert.Equal("Choque", CardCatalog.Get("chispazo").Name);
+        Assert.Equal("shock", CardCatalog.Canonical("chispazo"));
+        Assert.All(CardCatalog.All.Values, c => Assert.False(string.IsNullOrEmpty(c.EnglishName)));
     }
 
     [Fact]
     public void BouncedCommanderAlsoGoesToTheCommandZone()
     {
         var g = NewGame();
-        var kael = g.AddCommander(Opp, "kael");
+        var kael = g.AddCommander(Opp, "yargle");
         g.StartAt(Opp, Step.Main1);
-        g.AddMana(Opp, "montana", "montana", "llanura", "llanura");
+        g.AddMana(Opp, "swamp", "swamp", "swamp", "swamp", "swamp");
         g.Cast(kael.Id);
         g.BothPass();
         g.StartAt(Me, Step.Main1);
-        g.AddMana(Me, "isla", "isla");
-        g.Cast(g.AddToHand(Me, "retorno-bruma").Id, Target.OfCard(kael.Id));
+        g.AddMana(Me, "island");
+        g.Cast(g.AddToHand(Me, "unsummon").Id, Target.OfCard(kael.Id));
         g.BothPass();
         Assert.Contains(kael, g.Players[Opp].Command);
         Assert.Equal(1, kael.CommanderCasts);
@@ -50,26 +154,26 @@ public class RoguelikeTests
     public void AiPlaysALandAndCastsWhatItCan()
     {
         var g = new Game("Vos", "IA");
-        for (int i = 0; i < 10; i++) { g.AddToLibrary(Me, "lobo-musgo"); g.AddToLibrary(Opp, "lobo-musgo"); }
-        g.AddToBattlefield(Opp, "bosque");
-        g.AddToHand(Opp, "bosque");
-        g.AddToHand(Opp, "lobo-musgo");
+        for (int i = 0; i < 10; i++) { g.AddToLibrary(Me, "grizzly-bears"); g.AddToLibrary(Opp, "grizzly-bears"); }
+        g.AddToBattlefield(Opp, "forest");
+        g.AddToHand(Opp, "forest");
+        g.AddToHand(Opp, "grizzly-bears");
         g.StartAt(Opp, Step.Main1);
         for (int i = 0; i < 10 && g.Players[Opp].Battlefield.Count(c => c.IsCreature) == 0; i++) DuelAI.Act(g);
         Assert.True(g.Players[Opp].LandPlayedThisTurn);
-        Assert.Single(g.Players[Opp].Battlefield, c => c.Name == "Lobo de Musgo");
+        Assert.Single(g.Players[Opp].Battlefield, c => c.Name == "Osos pardos");
     }
 
     [Fact]
     public void AiKillsYourBestCreatureWithRemoval()
     {
         var g = NewGame();
-        g.AddToBattlefield(Me, "escudero-aurora");
-        var behemot = g.AddToBattlefield(Me, "behemot-valle");
-        g.AddToBattlefield(Opp, "pantano");
-        g.AddToBattlefield(Opp, "pantano");
-        g.AddToBattlefield(Opp, "pantano");
-        g.AddToHand(Opp, "fin-sombrio");
+        g.AddToBattlefield(Me, "elite-vanguard");
+        var behemot = g.AddToBattlefield(Me, "colossal-dreadmaw");
+        g.AddToBattlefield(Opp, "swamp");
+        g.AddToBattlefield(Opp, "swamp");
+        g.AddToBattlefield(Opp, "swamp");
+        g.AddToHand(Opp, "murder");
         g.StartAt(Opp, Step.Main1);
         DuelAI.Act(g);
         Assert.Single(g.Stack);
@@ -80,14 +184,14 @@ public class RoguelikeTests
     public void AiAttacksWhenTheWayIsClearAndHoldsBackWhenItWouldDie()
     {
         var g = NewGame();
-        g.AddToBattlefield(Opp, "lobo-musgo");
+        g.AddToBattlefield(Opp, "grizzly-bears");
         g.StartAt(Opp, Step.DeclareAttackers);
         DuelAI.Act(g);
         Assert.Single(g.Combat);
 
         var h = NewGame();
-        h.AddToBattlefield(Opp, "lobo-musgo");
-        h.AddToBattlefield(Me, "behemot-valle");
+        h.AddToBattlefield(Opp, "grizzly-bears");
+        h.AddToBattlefield(Me, "colossal-dreadmaw");
         h.StartAt(Opp, Step.DeclareAttackers);
         DuelAI.Act(h);
         Assert.Empty(h.Combat);
@@ -98,9 +202,9 @@ public class RoguelikeTests
     {
         var g = NewGame();
         g.SetLife(Me, 2);
-        g.AddToBattlefield(Me, "lobo-musgo");
-        g.AddToBattlefield(Opp, "montana");
-        g.AddToHand(Opp, "chispazo");
+        g.AddToBattlefield(Me, "grizzly-bears");
+        g.AddToBattlefield(Opp, "mountain");
+        g.AddToHand(Opp, "shock");
         g.StartAt(Opp, Step.Main1);
         DuelAI.Act(g);
         Assert.Equal(Me, g.Stack.Single().Target?.Player);
@@ -158,7 +262,7 @@ public class RoguelikeTests
         var duel = new Duel(new DuelSetup
         {
             EnemyName = setup.EnemyName, EnemyLife = 9, HumanDeck = setup.HumanDeck, EnemyDeck = setup.EnemyDeck,
-            HumanExtraCards = 1, HumanStartingLands = ["llanura"], HumanStartingSoldiers = 1, Seed = 1,
+            HumanExtraCards = 1, HumanStartingLands = ["plains"], HumanStartingSoldiers = 1, Seed = 1,
         });
         var me = duel.Game.Players[Duel.Human];
         Assert.Equal(8, me.Hand.Count);
@@ -182,11 +286,11 @@ public class RoguelikeTests
     [Fact]
     public void LandsFollowTheManaSymbols()
     {
-        List<string> spells = [.. Enumerable.Repeat("lobo-musgo", 9), "chispazo", "chispazo", "chispazo"];
+        List<string> spells = [.. Enumerable.Repeat("grizzly-bears", 9), "shock", "shock", "shock"];
         var lands = Run.Lands(spells);
         Assert.Equal(9, lands.Count);
-        Assert.Equal(7, lands.Count(l => l == "bosque"));
-        Assert.Equal(2, lands.Count(l => l == "montana"));
+        Assert.Equal(7, lands.Count(l => l == "forest"));
+        Assert.Equal(2, lands.Count(l => l == "mountain"));
     }
 
     [Fact]

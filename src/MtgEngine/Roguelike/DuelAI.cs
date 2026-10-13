@@ -47,6 +47,7 @@ public static class DuelAI
     {
         int me = g.PriorityPlayer;
         var p = g.Players[me];
+        if (!g.CanCastSpells(me)) return null;
         var baseline = Score(Settle(g.Clone()), me);
         Play? best = null;
         double bestGain = MinGain;
@@ -54,10 +55,10 @@ public static class DuelAI
         {
             var def = card.Definition;
             if (def.Type != CardType.Instant && !g.CanActAtSorcerySpeed) continue;
-            if (!g.CanAfford(me, Game.CostOf(card))) continue;
+            if (!g.CanAfford(me, g.CostOf(card))) continue;
             var targets = def.Target == TargetKind.None
                 ? [null]
-                : AllTargets(g).Where(t => g.IsLegalTarget(def.Target, t)).Select(t => (Target?)t).ToList();
+                : AllTargets(g).Where(t => g.IsLegalTarget(def, t, me)).Select(t => (Target?)t).ToList();
             foreach (var target in targets)
             {
                 var sim = g.Clone();

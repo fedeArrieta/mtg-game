@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace MtgEngine;
 
 /// <summary>A quién afecta un efecto. "Chosen" es el objetivo elegido al lanzar el hechizo.</summary>
-public enum Recipient { Default, Chosen, You, EachOpponent, EachCreature }
+public enum Recipient { Default, Chosen, You, EachOpponent, EachCreature, EachPlayer }
 
 /// <summary>Contexto de resolución: quién controla el efecto, su fuente y el objetivo elegido.</summary>
 internal sealed record EffectContext(Game Game, CardInstance Source, int Controller, Target? Target);
@@ -35,6 +35,7 @@ public abstract record Effect
     {
         Recipient.You => [ctx.Game.Players[ctx.Controller]],
         Recipient.EachOpponent => [ctx.Game.Players[1 - ctx.Controller]],
+        Recipient.EachPlayer => ctx.Game.Players,
         Recipient.Chosen when ctx.Target is { IsPlayer: true } t => [ctx.Game.Players[t.Player!.Value]],
         _ => [],
     };

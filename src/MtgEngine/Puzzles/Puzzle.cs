@@ -53,7 +53,7 @@ public sealed class Puzzle
         g.SetLife(player, side.Life);
         foreach (var c in side.Hand) g.AddToHand(player, c);
         foreach (var p in side.Battlefield) g.AddToBattlefield(player, p.Card, p.Tapped, p.Sick);
-        foreach (var c in side.Library.Count > 0 ? side.Library : Enumerable.Repeat("llanura", 10)) g.AddToLibrary(player, c);
+        foreach (var c in side.Library.Count > 0 ? side.Library : Enumerable.Repeat("plains", 10)) g.AddToLibrary(player, c);
         foreach (var c in side.Graveyard) g.AddToGraveyard(player, c);
     }
 
@@ -66,7 +66,7 @@ public sealed class Puzzle
         if (Opponent.Life < 1 || You.Life < 1) errors.Add("Las vidas tienen que ser al menos 1.");
         var ids = new[] { You, Opponent }
             .SelectMany(s => s.Hand.Concat(s.Library).Concat(s.Graveyard).Concat(s.Battlefield.Select(b => b.Card)));
-        foreach (var id in ids.Distinct().Where(id => !CardCatalog.All.ContainsKey(id)))
+        foreach (var id in ids.Distinct().Where(id => !CardCatalog.TryGet(id, out _)))
             errors.Add($"No existe la carta '{id}'.");
         return errors;
     }

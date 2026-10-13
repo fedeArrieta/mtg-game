@@ -48,11 +48,13 @@ public class PuzzleTests
         var session = new PuzzleSession(Get("primer-golpe"));
         var g = session.Game;
         session.PlayLand(g.Players[0].Hand.First(c => c.IsLand).Id);
-        session.Cast(session.Game.Players[0].Hand.First(c => c.Name == "Jinete de Brasas").Id);
+        session.Cast(session.Game.Players[0].Hand.First(c => c.Name == "Trasgo furioso").Id);
         session.Pass();
-        session.Cast(session.Game.Players[0].Hand.First(c => c.Name == "Chispazo").Id, Target.OfPlayer(1));
+        session.Cast(session.Game.Players[0].Hand.First(c => c.Name == "Choque").Id, Target.OfPlayer(1));
         session.Pass();
-        Assert.Equal(2, session.Game.Players[1].Life);
+        session.Cast(session.Game.Players[0].Hand.First(c => c.Name == "Relámpago").Id, Target.OfPlayer(1));
+        session.Pass();
+        Assert.Equal(1, session.Game.Players[1].Life);
         while (session.Game.Awaiting != Game.Pending.Attackers) session.Pass();
         session.DeclareAttackers(session.Game.Players[0].Battlefield.Where(c => c.IsCreature).Select(c => c.Id));
         while (session.Status == PuzzleStatus.Playing) session.Pass();
@@ -74,9 +76,9 @@ public class PuzzleTests
         var session = new PuzzleSession(Get("primer-golpe"));
         var land = session.Game.Players[0].Hand.First(c => c.IsLand);
         session.PlayLand(land.Id);
-        Assert.Equal(2, session.Game.Players[0].Hand.Count);
-        session.Undo();
         Assert.Equal(3, session.Game.Players[0].Hand.Count);
+        session.Undo();
+        Assert.Equal(4, session.Game.Players[0].Hand.Count);
         Assert.False(session.CanUndo);
     }
 
@@ -85,7 +87,7 @@ public class PuzzleTests
     {
         var session = new PuzzleSession(Get("pisoton"));
         var wall = session.Game.Players[1].Battlefield.Single();
-        var growth = session.Game.Players[0].Hand.First(c => c.Name == "Crecimiento Salvaje");
+        var growth = session.Game.Players[0].Hand.First(c => c.Name == "Crecimiento gigante");
         Assert.Throws<RulesException>(() => session.Cast(growth.Id, Target.OfPlayer(1)));
         Assert.All(session.Game.Players[0].Battlefield.Where(c => c.IsLand), l => Assert.False(l.Tapped));
         Assert.False(session.CanUndo);
@@ -97,13 +99,13 @@ public class PuzzleTests
     {
         var g = new Game();
         g.StartAt(0, Step.Main1);
-        var forest = g.AddToBattlefield(0, "bosque");
-        var mountain = g.AddToBattlefield(0, "montana");
-        var wolf = g.AddToHand(0, "lobo-musgo");
+        var forest = g.AddToBattlefield(0, "forest");
+        var mountain = g.AddToBattlefield(0, "mountain");
+        var wolf = g.AddToHand(0, "grizzly-bears");
         g.CastWithAutoTap(wolf.Id);
         Assert.True(forest.Tapped);
         Assert.True(mountain.Tapped);
-        var bolt = g.AddToHand(0, "chispazo");
+        var bolt = g.AddToHand(0, "shock");
         Assert.Throws<RulesException>(() => g.CastWithAutoTap(bolt.Id, Target.OfPlayer(1)));
     }
 
@@ -113,8 +115,8 @@ public class PuzzleTests
         var p = new Puzzle
         {
             Title = "test",
-            You = new() { Battlefield = [new() { Card = "behemot-valle" }] },
-            Opponent = new() { Life = 5, Battlefield = [new() { Card = "escudero-aurora" }] },
+            You = new() { Battlefield = [new() { Card = "colossal-dreadmaw" }] },
+            Opponent = new() { Life = 6, Battlefield = [new() { Card = "elite-vanguard" }] },
         };
         var session = new PuzzleSession(p);
         while (session.Game.Awaiting != Game.Pending.Attackers) session.Pass();
@@ -122,7 +124,8 @@ public class PuzzleTests
         session.Pass();
         Assert.Contains(session.Game.Combat, a => a.Blocked);
         while (session.Status == PuzzleStatus.Playing) session.Pass();
-        Assert.Equal(1, session.Game.Players[1].Life); // 1 de daño al escudero, 4 arrollan
+        // 1 de daño a la vanguardia, 5 arrollan.
+        Assert.Equal(1, session.Game.Players[1].Life);
         Assert.False(session.Game.Players[1].HasLost);
     }
 
@@ -132,8 +135,8 @@ public class PuzzleTests
         var p = new Puzzle
         {
             Title = "test",
-            You = new() { Battlefield = [new() { Card = "behemot-valle" }] },
-            Opponent = new() { Life = 20, Battlefield = [new() { Card = "escudero-aurora" }] },
+            You = new() { Battlefield = [new() { Card = "colossal-dreadmaw" }] },
+            Opponent = new() { Life = 20, Battlefield = [new() { Card = "elite-vanguard" }] },
         };
         var session = new PuzzleSession(p);
         while (session.Game.Awaiting != Game.Pending.Attackers) session.Pass();

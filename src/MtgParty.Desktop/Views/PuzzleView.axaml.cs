@@ -6,7 +6,11 @@ namespace MtgParty.Desktop.Views;
 
 public partial class PuzzleView : UserControl
 {
-    public PuzzleView() => InitializeComponent();
+    public PuzzleView()
+    {
+        InitializeComponent();
+        BoardFocus.Attach(this);
+    }
 
     async void OnOpen(object? sender, RoutedEventArgs e)
     {

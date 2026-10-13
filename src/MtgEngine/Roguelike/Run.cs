@@ -159,11 +159,11 @@ public sealed class Run
 
     public static string BasicLand(Color c) => c switch
     {
-        Color.White => "llanura",
-        Color.Blue => "isla",
-        Color.Black => "pantano",
-        Color.Red => "montana",
-        _ => "bosque",
+        Color.White => "plains",
+        Color.Blue => "island",
+        Color.Black => "swamp",
+        Color.Red => "mountain",
+        _ => "forest",
     };
 
     // ---------- Mapa ----------
@@ -285,7 +285,7 @@ public sealed class Run
         var enemy = RunContent.Enemy(Encounter);
         var deck = Deck();
         var mainLand = deck.Where(id => CardCatalog.Get(id).Type == CardType.Land)
-            .GroupBy(id => id).OrderByDescending(g => g.Count()).Select(g => g.Key).FirstOrDefault() ?? "bosque";
+            .GroupBy(id => id).OrderByDescending(g => g.Count()).Select(g => g.Key).FirstOrDefault() ?? "forest";
         return new DuelSetup
         {
             EnemyName = enemy.Name,

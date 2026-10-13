@@ -1,15 +1,17 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:MtgParty.Desktop.ViewModels"
+             xmlns:views="using:MtgParty.Desktop.Views"
              x:Class="MtgParty.Desktop.Views.PuzzleEditorView"
              x:DataType="vm:PuzzleEditorViewModel"
              x:Name="Root">
   <UserControl.Resources>
     <DataTemplate x:Key="EditorCard" x:DataType="vm:EditorCardViewModel">
       <Border Classes="card" Padding="8,6" Margin="0,0,0,6">
-        <Grid ColumnDefinitions="*,Auto">
-          <StackPanel Spacing="2">
-            <TextBlock Text="{Binding Name}" FontWeight="Bold" />
+        <Grid ColumnDefinitions="Auto,*,Auto">
+          <views:CardTile DataContext="{Binding Tile}" Scale="0.4" Margin="0,0,8,0" VerticalAlignment="Top" />
+          <StackPanel Grid.Column="1" Spacing="2">
+            <TextBlock Text="{Binding Name}" FontWeight="Bold" TextWrapping="Wrap" />
             <TextBlock Text="{Binding Detail}" Classes="muted" FontSize="12" />
             <StackPanel Orientation="Horizontal" Spacing="12" IsVisible="{Binding OnBattlefield}">
               <CheckBox Content="Girada" IsChecked="{Binding Tapped}" />
@@ -17,7 +19,7 @@
                         ToolTip.Tip="Entró este turno: no puede atacar salvo que tenga prisa" />
             </StackPanel>
           </StackPanel>
-          <Button Grid.Column="1" VerticalAlignment="Top" Content="Quitar"
+          <Button Grid.Column="2" VerticalAlignment="Top" Content="Quitar"
                   Command="{Binding #Root.((vm:PuzzleEditorViewModel)DataContext).RemoveCommand}" CommandParameter="{Binding}" />
         </Grid>
       </Border>
@@ -80,7 +82,9 @@
               <DataTemplate x:DataType="vm:CatalogCard"><TextBlock Text="{Binding Label}" /></DataTemplate>
             </ComboBox.ItemTemplate>
           </ComboBox>
-          <TextBlock Text="{Binding SelectedCard.Definition.Text}" Classes="muted" TextWrapping="Wrap" FontSize="12" />
+          <Panel IsVisible="{Binding SelectedCard, Converter={x:Static ObjectConverters.IsNotNull}}" HorizontalAlignment="Center">
+            <views:CardTile DataContext="{Binding SelectedCard.Tile, FallbackValue={x:Null}}" Scale="1.1" />
+          </Panel>
           <Button HorizontalAlignment="Stretch" Content="Agregar a tu mano" Command="{Binding AddToHandCommand}" />
           <Button HorizontalAlignment="Stretch" Content="Agregar a tu campo" Command="{Binding AddToYourBattlefieldCommand}" />
           <Button HorizontalAlignment="Stretch" Content="Agregar al campo del rival" Command="{Binding AddToOpponentBattlefieldCommand}" />
