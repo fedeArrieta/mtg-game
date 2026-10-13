@@ -9,7 +9,8 @@ public static class BlockerAI
 {
     const int MaxCombinations = 20_000;
 
-    public static IReadOnlyDictionary<int, int> Choose(Game game)
+    /// <param name="maxCombinations">Más allá de este número de combinaciones, elige de forma golosa.</param>
+    public static IReadOnlyDictionary<int, int> Choose(Game game, int maxCombinations = MaxCombinations)
     {
         var defender = game.Defending;
         var attackers = game.Combat.Select(a => game.FindOnBattlefield(a.AttackerId)!).ToList();
@@ -21,7 +22,7 @@ public static class BlockerAI
             .ToArray()).ToList();
 
         long combinations = options.Aggregate(1L, (n, o) => n * o.Length);
-        if (combinations > MaxCombinations) return new Dictionary<int, int>();
+        if (combinations > maxCombinations) return Greedy(game, blockers, attackers, options);
 
         Dictionary<int, int> best = [];
         (int, int) bestScore = (int.MinValue, int.MinValue);
@@ -35,6 +36,25 @@ public static class BlockerAI
             if (score.CompareTo(bestScore) > 0) { bestScore = score; best = blocks; }
         }
         return best;
+    }
+
+    /// <summary>Con demasiadas combinaciones, cada bloqueador elige de a uno la mejor opción dadas las anteriores.</summary>
+    static Dictionary<int, int> Greedy(Game game, List<CardInstance> blockers, List<CardInstance> attackers, List<int[]> options)
+    {
+        var blocks = new Dictionary<int, int>();
+        foreach (var i in Enumerable.Range(0, blockers.Count).OrderByDescending(i => Value(blockers[i])))
+        {
+            int bestOption = -1;
+            var bestScore = Evaluate(game, blocks);
+            foreach (var o in options[i].Where(o => o >= 0))
+            {
+                var trial = new Dictionary<int, int>(blocks) { [blockers[i].Id] = attackers[o].Id };
+                var score = Evaluate(game, trial);
+                if (score.CompareTo(bestScore) > 0) { bestScore = score; bestOption = o; }
+            }
+            if (bestOption >= 0) blocks[blockers[i].Id] = attackers[bestOption].Id;
+        }
+        return blocks;
     }
 
     static bool CanBlock(CardInstance blocker, CardInstance attacker) =>

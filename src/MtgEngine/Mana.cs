@@ -33,6 +33,9 @@ public sealed class ManaCost
     public IEnumerable<Color> Colors =>
         Enum.GetValues<Color>().Where(c => c != Color.Colorless && colored[(int)c] > 0);
 
+    /// <summary>El mismo coste con genérico extra (el impuesto del comandante).</summary>
+    public ManaCost PlusGeneric(int extra) => extra == 0 ? this : new(Generic + extra, colored);
+
     public static ManaCost Parse(string? text)
     {
         if (string.IsNullOrWhiteSpace(text)) return Zero;

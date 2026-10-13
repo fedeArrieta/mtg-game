@@ -2,6 +2,7 @@
   <ItemGroup>
     <EmbeddedResource Include="Resources\cards.json" LogicalName="MtgEngine.cards.json" />
     <EmbeddedResource Include="Resources\puzzles.json" LogicalName="MtgEngine.puzzles.json" />
+    <EmbeddedResource Include="Resources\roguelike.json" LogicalName="MtgEngine.roguelike.json" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="MtgEngine.Tests" />
