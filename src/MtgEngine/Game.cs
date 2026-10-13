@@ -62,6 +62,8 @@ public sealed class Game
         return c;
     }
 
+    public CardInstance AddToGraveyard(int player, string cardId) => AddToZone(player, CardCatalog.Get(cardId), Zone.Graveyard);
+
     public void SetLife(int player, int life) => Players[player].Life = life;
 
     CardInstance AddToZone(int player, CardDefinition def, Zone zone, bool isToken = false)
@@ -124,6 +126,60 @@ public sealed class Game
         if (land.Tapped) throw new RulesException($"{land.Name} ya está girada.");
         land.Tapped = true;
         p.Pool.Add(color);
+    }
+
+    /// <summary>
+    /// Gira las tierras que falten para pagar la carta (usando primero el maná flotante) y la lanza.
+    /// Si no alcanza, no gira nada y lanza <see cref="RulesException"/>.
+    /// </summary>
+    public void CastWithAutoTap(int cardId, Target? target = null)
+    {
+        RequireOngoing();
+        var p = Priority;
+        var cost = InHand(p, cardId).Definition.ManaCost;
+        var lands = PlanLandsFor(p, cost)
+            ?? throw new RulesException($"No te alcanza el maná para {InHand(p, cardId).Name}: cuesta {cost}.");
+        var snapshot = lands.Select(l => (Land: l, l.Tapped)).ToList();
+        var pool = p.Pool.Clone();
+        foreach (var land in lands) TapForMana(land.Id);
+        try { Cast(cardId, target); }
+        catch
+        {
+            // Si la jugada no era legal por otro motivo, se deshace el giro de tierras.
+            foreach (var (land, tapped) in snapshot) land.Tapped = tapped;
+            p.RestorePool(pool);
+            throw;
+        }
+    }
+
+    /// <summary>Si con el maná flotante y las tierras sin girar alcanza para pagar el coste.</summary>
+    public bool CanAfford(int player, ManaCost cost) => PlanLandsFor(Players[player], cost) is not null;
+
+    /// <summary>Elige qué tierras girar: primero las del color que falta, después cualquiera para el genérico.</summary>
+    static List<CardInstance>? PlanLandsFor(PlayerState p, ManaCost cost)
+    {
+        var pool = p.Pool.Clone();
+        var untapped = p.Battlefield.Where(c => c.Definition.Produces is not null && !c.Tapped).ToList();
+        var chosen = new List<CardInstance>();
+        foreach (var color in Enum.GetValues<Color>())
+        {
+            int missing = cost[color] - pool[color];
+            foreach (var land in untapped.Where(l => l.Definition.Produces == color).Take(Math.Max(0, missing)).ToList())
+            {
+                pool.Add(color);
+                chosen.Add(land);
+                untapped.Remove(land);
+            }
+        }
+        // Para el genérico se gastan primero las tierras cuyo color hay más.
+        var spare = untapped.GroupBy(l => l.Definition.Produces).OrderByDescending(g => g.Count()).SelectMany(g => g).ToList();
+        foreach (var land in spare)
+        {
+            if (pool.CanPay(cost)) break;
+            pool.Add(land.Definition.Produces!.Value);
+            chosen.Add(land);
+        }
+        return pool.CanPay(cost) ? chosen : null;
     }
 
     public void Cast(int cardId, Target? target = null)
@@ -263,7 +319,7 @@ public sealed class Game
         CheckStateBasedActions();
     }
 
-    bool IsLegalTarget(TargetKind kind, Target t) => kind switch
+    public bool IsLegalTarget(TargetKind kind, Target t) => kind switch
     {
         TargetKind.Any => t.IsPlayer ? IsPlayerIndex(t.Player!.Value) : FindOnBattlefield(t.Card ?? -1)?.IsCreature == true,
         TargetKind.Creature => t.IsCard && FindOnBattlefield(t.Card!.Value)?.IsCreature == true,
@@ -436,6 +492,7 @@ public sealed class Game
     {
         var controller = Players[c.Controller];
         if (!controller.Battlefield.Remove(c)) return;
+        RemoveFromCombat(c);
         c.ClearEndOfTurn();
         c.Tapped = false;
         Log($"{c.Name} {reason}.");
@@ -447,12 +504,20 @@ public sealed class Game
     internal void ReturnToHand(CardInstance c)
     {
         if (!Players[c.Controller].Battlefield.Remove(c)) return;
+        RemoveFromCombat(c);
         c.ClearEndOfTurn();
         c.Tapped = false;
         Log($"{c.Name} vuelve a la mano de su dueño.");
         if (c.IsToken) { c.Zone = Zone.Exile; return; }
         c.Zone = Zone.Hand;
         Players[c.Owner].Hand.Add(c);
+    }
+
+    /// <summary>Una criatura que deja el campo deja de atacar o bloquear. Un atacante bloqueado sigue bloqueado.</summary>
+    void RemoveFromCombat(CardInstance c)
+    {
+        Combat.RemoveAll(a => a.AttackerId == c.Id);
+        foreach (var a in Combat) a.BlockerIds.Remove(c.Id);
     }
 
     // ---------- Acciones de estado ----------

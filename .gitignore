@@ -5,3 +5,4 @@ obj/
 .idea/
 TestResults/
 publish/
+.avalonia-build-tasks/

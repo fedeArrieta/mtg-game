@@ -34,6 +34,14 @@
     <Style Selector="TextBlock.error">
       <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
     </Style>
+    <Style Selector="TextBlock.h2">
+      <Setter Property="FontSize" Value="18" />
+      <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+    <Style Selector="TextBlock.won">
+      <Setter Property="Foreground" Value="{StaticResource GoldBrush}" />
+      <Setter Property="FontWeight" Value="Bold" />
+    </Style>
     <Style Selector="TextBlock.h1">
       <Setter Property="FontSize" Value="24" />
       <Setter Property="FontWeight" Value="Bold" />

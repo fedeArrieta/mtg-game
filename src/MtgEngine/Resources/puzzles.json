@@ -1,0 +1,102 @@
+[
+  {
+    "id": "primer-golpe", "title": "Primer golpe", "difficulty": 1,
+    "description": "El rival está contra las cuerdas y no tiene defensas. Terminá el trabajo.",
+    "hint": "Todavía no jugaste tu tierra de este turno, y hay criaturas que pueden atacar apenas entran.",
+    "you": {
+      "hand": ["montana", "jinete-brasas", "chispazo"],
+      "battlefield": [{ "card": "montana" }, { "card": "montana" }]
+    },
+    "opponent": { "life": 4 }
+  },
+  {
+    "id": "por-los-aires", "title": "Por los aires", "difficulty": 1,
+    "description": "Dos lobos cuidan la puerta. Por el suelo no se pasa.",
+    "hint": "Los lobos no pueden bloquear a una criatura que vuela.",
+    "you": {
+      "hand": ["crecimiento-salvaje"],
+      "battlefield": [{ "card": "bosque" }, { "card": "grifo-centinela" }, { "card": "lobo-musgo" }]
+    },
+    "opponent": { "life": 5, "battlefield": [{ "card": "lobo-musgo" }, { "card": "lobo-musgo" }] }
+  },
+  {
+    "id": "pisoton", "title": "Pisotón", "difficulty": 2,
+    "description": "Un muro de espinas frena a tu lobo. Hacé que el daño pase igual.",
+    "hint": "El rival bloquea sin saber qué tenés en la mano. Esperá a que bloquee.",
+    "you": {
+      "hand": ["furia-repentina", "crecimiento-salvaje"],
+      "battlefield": [{ "card": "montana" }, { "card": "bosque" }, { "card": "lobo-musgo" }]
+    },
+    "opponent": { "life": 4, "battlefield": [{ "card": "muro-espinas" }] }
+  },
+  {
+    "id": "ritual-de-fuego", "title": "Ritual de fuego", "difficulty": 2,
+    "description": "Poco maná y mucho fuego en la mano. Cada maná cuenta.",
+    "hint": "El maná del ritual desaparece cuando termina la fase. Usalo todo en la fase principal.",
+    "you": {
+      "hand": ["montana", "ritual-brasas", "chispazo", "chispazo", "jinete-brasas"],
+      "battlefield": [{ "card": "montana" }]
+    },
+    "opponent": { "life": 6 }
+  },
+  {
+    "id": "doble-filo", "title": "Doble filo", "difficulty": 2,
+    "description": "El rival tiene un bloqueador para el cielo y otro para el suelo.",
+    "hint": "Sacá un bloqueador del medio antes de atacar.",
+    "you": {
+      "hand": ["retorno-bruma", "chispazo"],
+      "battlefield": [{ "card": "montana" }, { "card": "isla" }, { "card": "isla" }, { "card": "grifo-centinela" }, { "card": "lobo-musgo" }]
+    },
+    "opponent": { "life": 4, "battlefield": [{ "card": "arquera-copas" }, { "card": "vigia-mareas" }] }
+  },
+  {
+    "id": "lluvia-amiga", "title": "Lluvia amiga", "difficulty": 3,
+    "description": "Tres bloqueadores para tres atacantes. Alguno tiene que caer.",
+    "hint": "Un hechizo que daña a todas las criaturas también puede jugar a tu favor.",
+    "you": {
+      "hand": ["lluvia-ascuas"],
+      "battlefield": [{ "card": "montana" }, { "card": "montana" }, { "card": "montana" }, { "card": "lobo-musgo" }, { "card": "lobo-musgo" }, { "card": "grifo-centinela" }]
+    },
+    "opponent": { "life": 4, "battlefield": [{ "card": "escudero-aurora" }, { "card": "escudero-aurora" }, { "card": "vigia-mareas" }] }
+  },
+  {
+    "id": "muro-de-contencion", "title": "Muro de contención", "difficulty": 3,
+    "description": "Trece vidas detrás de un muro y una arquera. Tu behemot y tu grifo tienen que hacer todo.",
+    "hint": "No gastes los trucos antes de tiempo: mirá primero cómo bloquea el rival.",
+    "you": {
+      "hand": ["crecimiento-salvaje", "furia-repentina", "retorno-bruma"],
+      "battlefield": [{ "card": "bosque" }, { "card": "bosque" }, { "card": "montana" }, { "card": "behemot-valle" }, { "card": "grifo-centinela" }]
+    },
+    "opponent": { "life": 13, "battlefield": [{ "card": "muro-espinas" }, { "card": "arquera-copas" }] }
+  },
+  {
+    "id": "veneno-y-furia", "title": "Veneno y furia", "difficulty": 3,
+    "description": "Un acechador diminuto contra un behemot enorme.",
+    "hint": "Con toque mortal, 1 de daño alcanza para matar a cualquier bloqueador. ¿Y si además arrolla?",
+    "you": {
+      "hand": ["furia-repentina"],
+      "battlefield": [{ "card": "montana" }, { "card": "acechador-cienaga" }]
+    },
+    "opponent": { "life": 4, "battlefield": [{ "card": "behemot-valle" }] }
+  },
+  {
+    "id": "cuenta-regresiva", "title": "Cuenta regresiva", "difficulty": 4,
+    "description": "Diez vidas. Necesitás cada punto de daño que puedas juntar.",
+    "hint": "Con el ritual te alcanza para el heraldo y algo más.",
+    "you": {
+      "hand": ["heraldo-trueno", "ritual-brasas", "furia-repentina"],
+      "battlefield": [{ "card": "montana" }, { "card": "montana" }, { "card": "bosque" }, { "card": "pantano" }, { "card": "jinete-brasas" }, { "card": "escudero-aurora" }, { "card": "clerigo-faro" }]
+    },
+    "opponent": { "life": 10, "battlefield": [{ "card": "lobo-musgo" }] }
+  },
+  {
+    "id": "gran-final", "title": "Gran final", "difficulty": 5,
+    "description": "Todo lo que aprendiste, junto. El rival tiene tres defensores y trece vidas.",
+    "hint": "Empezá por el ritual y la tierra: vas a necesitar todo el maná.",
+    "you": {
+      "hand": ["montana", "ritual-brasas", "crecimiento-salvaje", "furia-repentina", "retorno-bruma", "chispazo"],
+      "battlefield": [{ "card": "bosque" }, { "card": "bosque" }, { "card": "montana" }, { "card": "isla" }, { "card": "lobo-musgo" }, { "card": "grifo-centinela" }, { "card": "acechador-cienaga" }]
+    },
+    "opponent": { "life": 13, "battlefield": [{ "card": "muro-espinas" }, { "card": "vigia-mareas" }, { "card": "lobo-musgo" }] }
+  }
+]

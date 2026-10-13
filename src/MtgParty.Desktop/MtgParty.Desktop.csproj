@@ -14,5 +14,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MtgParty.Core\MtgParty.Core.csproj" />
+    <ProjectReference Include="..\MtgEngine\MtgEngine.csproj" />
   </ItemGroup>
 </Project>

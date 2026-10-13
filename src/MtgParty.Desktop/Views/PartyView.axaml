@@ -1,0 +1,200 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:MtgParty.Desktop.ViewModels"
+        x:Class="MtgParty.Desktop.Views.PartyView"
+        x:DataType="vm:PartyViewModel"
+        x:Name="Root"
+        >
+  <DockPanel>
+    <!-- Barra superior: archivo de partida -->
+    <Border DockPanel.Dock="Top" Padding="20,16" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1">
+      <Grid ColumnDefinitions="*,Auto">
+        <StackPanel Spacing="2">
+          <TextBlock Classes="h2" Text="Party game de Commander" />
+          <TextBlock Classes="muted" Text="Configurá la partida y exportá un HTML para compartir con la mesa." />
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+          <Button Content="Nueva" Command="{Binding NewPartyCommand}" />
+          <Button Content="Abrir…" Click="OnOpen" />
+          <Button Content="Guardar…" Click="OnSave" />
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <!-- Barra inferior: exportar -->
+    <Border DockPanel.Dock="Bottom" Padding="20,12" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0">
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Text="{Binding Status}" TextWrapping="Wrap" VerticalAlignment="Center"
+                   Classes.muted="{Binding !StatusIsError}" Classes.error="{Binding StatusIsError}" />
+        <Button Grid.Column="1" Classes="primary" Padding="20,10" Content="Exportar HTML…" Click="OnExport" />
+      </Grid>
+    </Border>
+
+    <TabControl Margin="12,4,12,0">
+      <!-- Partida -->
+      <TabItem Header="Partida">
+        <ScrollViewer>
+          <StackPanel Spacing="16" Margin="8" MaxWidth="720" HorizontalAlignment="Left">
+            <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="10">
+              <TextBlock Text="Nombre de la partida" VerticalAlignment="Center" />
+              <TextBox Grid.Column="1" Text="{Binding Title}" Watermark="Mesa del Caos" />
+              <TextBlock Grid.Row="1" Text="Vidas iniciales" VerticalAlignment="Center" />
+              <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding StartingLife}" Minimum="1" Maximum="999" Increment="1"
+                             FormatString="0" HorizontalAlignment="Left" Width="140" />
+              <CheckBox Grid.Row="2" Grid.Column="1" IsChecked="{Binding AutoEventEachRound}"
+                        Content="Robar un desafío automáticamente al empezar cada ronda" />
+            </Grid>
+
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Text="Jugadores (2 a 6)" FontWeight="Bold" FontSize="16" VerticalAlignment="Center" />
+              <Button Grid.Column="1" Content="Agregar jugador" Command="{Binding AddPlayerCommand}" />
+            </Grid>
+            <ItemsControl ItemsSource="{Binding Players}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate><StackPanel Spacing="8" /></ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:PlayerViewModel">
+                  <Border Classes="card">
+                    <Grid ColumnDefinitions="*,160,Auto" ColumnSpacing="8">
+                      <TextBox Text="{Binding Name}" Watermark="Nombre" MaxLength="20" />
+                      <ComboBox Grid.Column="1" HorizontalAlignment="Stretch"
+                                ItemsSource="{x:Static vm:PlayerViewModel.ColorOptions}" SelectedIndex="{Binding ColorIndex}">
+                        <ComboBox.ItemTemplate>
+                          <DataTemplate x:DataType="vm:Option"><TextBlock Text="{Binding Label}" /></DataTemplate>
+                        </ComboBox.ItemTemplate>
+                      </ComboBox>
+                      <Button Grid.Column="2" Content="Quitar"
+                              Command="{Binding #Root.((vm:PartyViewModel)DataContext).RemovePlayerCommand}"
+                              CommandParameter="{Binding}" />
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <TextBlock Classes="muted" TextWrapping="Wrap"
+                       Text="Las misiones secretas se reparten al azar cuando se abre el HTML, así nadie las conoce de antemano. En la mesa también se pueden cambiar los nombres con Nueva partida." />
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <!-- Desafíos -->
+      <TabItem Header="Desafíos">
+        <DockPanel Margin="8">
+          <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,10">
+            <TextBlock Classes="muted" Text="{Binding ChallengesSummary}" VerticalAlignment="Center" />
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+              <Button Content="Activar todos" Command="{Binding SetAllCommand}" CommandParameter="challenges:on" />
+              <Button Content="Desactivar todos" Command="{Binding SetAllCommand}" CommandParameter="challenges:off" />
+              <Button Classes="primary" Content="Nuevo desafío" Command="{Binding AddChallengeCommand}" />
+            </StackPanel>
+          </Grid>
+          <ScrollViewer>
+            <ItemsControl ItemsSource="{Binding Challenges}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate><StackPanel Spacing="8" /></ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:ChallengeViewModel">
+                  <Border Classes="card">
+                    <Grid ColumnDefinitions="Auto,*,170,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+                      <CheckBox IsChecked="{Binding Enabled}" ToolTip.Tip="Incluir en la partida" />
+                      <TextBox Grid.Column="1" Text="{Binding Title}" Watermark="Título" FontWeight="Bold" />
+                      <ComboBox Grid.Column="2" HorizontalAlignment="Stretch"
+                                ItemsSource="{x:Static vm:ChallengeViewModel.DurationOptions}" SelectedIndex="{Binding DurationIndex}">
+                        <ComboBox.ItemTemplate>
+                          <DataTemplate x:DataType="vm:Option"><TextBlock Text="{Binding Label}" /></DataTemplate>
+                        </ComboBox.ItemTemplate>
+                      </ComboBox>
+                      <Button Grid.Column="3" Content="Borrar"
+                              Command="{Binding #Root.((vm:PartyViewModel)DataContext).RemoveChallengeCommand}"
+                              CommandParameter="{Binding}" />
+                      <TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding Text}"
+                               Watermark="Qué pasa en la mesa" TextWrapping="Wrap" AcceptsReturn="False" />
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+        </DockPanel>
+      </TabItem>
+
+      <!-- Misiones -->
+      <TabItem Header="Misiones secretas">
+        <DockPanel Margin="8">
+          <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,10">
+            <TextBlock Classes="muted" Text="{Binding MissionsSummary}" VerticalAlignment="Center" />
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+              <Button Content="Activar todas" Command="{Binding SetAllCommand}" CommandParameter="missions:on" />
+              <Button Content="Desactivar todas" Command="{Binding SetAllCommand}" CommandParameter="missions:off" />
+              <Button Classes="primary" Content="Nueva misión" Command="{Binding AddMissionCommand}" />
+            </StackPanel>
+          </Grid>
+          <ScrollViewer>
+            <ItemsControl ItemsSource="{Binding Missions}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate><StackPanel Spacing="8" /></ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:MissionViewModel">
+                  <Border Classes="card">
+                    <Grid ColumnDefinitions="Auto,Auto,*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+                      <CheckBox IsChecked="{Binding Enabled}" ToolTip.Tip="Incluir en la partida" />
+                      <TextBlock Grid.Column="1" Text="Misión" Classes="muted" VerticalAlignment="Center" Width="80" />
+                      <TextBox Grid.Column="2" Text="{Binding Text}" TextWrapping="Wrap" Watermark="Qué hay que lograr" />
+                      <Button Grid.Column="3" Content="Borrar"
+                              Command="{Binding #Root.((vm:PartyViewModel)DataContext).RemoveMissionCommand}"
+                              CommandParameter="{Binding}" />
+                      <TextBlock Grid.Row="1" Grid.Column="1" Text="Recompensa" Classes="muted" VerticalAlignment="Center" />
+                      <TextBox Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="2" Text="{Binding Reward}" TextWrapping="Wrap" />
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+        </DockPanel>
+      </TabItem>
+
+      <!-- Planos -->
+      <TabItem Header="Planos">
+        <DockPanel Margin="8">
+          <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,10">
+            <TextBlock Classes="muted" Text="{Binding PlanesSummary}" VerticalAlignment="Center" />
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+              <Button Content="Activar todos" Command="{Binding SetAllCommand}" CommandParameter="planes:on" />
+              <Button Content="Desactivar todos" Command="{Binding SetAllCommand}" CommandParameter="planes:off" />
+              <Button Classes="primary" Content="Nuevo plano" Command="{Binding AddPlaneCommand}" />
+            </StackPanel>
+          </Grid>
+          <ScrollViewer>
+            <ItemsControl ItemsSource="{Binding Planes}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate><StackPanel Spacing="8" /></ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:PlaneViewModel">
+                  <Border Classes="card">
+                    <Grid ColumnDefinitions="Auto,Auto,*,Auto" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+                      <CheckBox IsChecked="{Binding Enabled}" ToolTip.Tip="Incluir en la partida" />
+                      <TextBlock Grid.Column="1" Text="Plano" Classes="muted" VerticalAlignment="Center" Width="80" />
+                      <TextBox Grid.Column="2" Text="{Binding Name}" FontWeight="Bold" Watermark="Nombre del plano" />
+                      <Button Grid.Column="3" Content="Borrar"
+                              Command="{Binding #Root.((vm:PartyViewModel)DataContext).RemovePlaneCommand}"
+                              CommandParameter="{Binding}" />
+                      <TextBlock Grid.Row="1" Grid.Column="1" Text="Efecto" Classes="muted" VerticalAlignment="Center" />
+                      <TextBox Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="2" Text="{Binding StaticEffect}" TextWrapping="Wrap" />
+                      <TextBlock Grid.Row="2" Grid.Column="1" Text="Caos" Classes="muted" VerticalAlignment="Center" />
+                      <TextBox Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="2" Text="{Binding ChaosEffect}" TextWrapping="Wrap" />
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+        </DockPanel>
+      </TabItem>
+    </TabControl>
+  </DockPanel>
+</UserControl>

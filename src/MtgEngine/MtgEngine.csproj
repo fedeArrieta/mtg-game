@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <EmbeddedResource Include="Resources\cards.json" LogicalName="MtgEngine.cards.json" />
+    <EmbeddedResource Include="Resources\puzzles.json" LogicalName="MtgEngine.puzzles.json" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="MtgEngine.Tests" />

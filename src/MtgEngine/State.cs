@@ -77,6 +77,8 @@ public sealed class PlayerState
     public bool HasLost { get; internal set; }
     internal bool DrewFromEmptyLibrary { get; set; }
 
+    internal void RestorePool(ManaPool pool) => Pool = pool.Clone();
+
     internal PlayerState Clone(Dictionary<int, CardInstance> cards)
     {
         var p = (PlayerState)MemberwiseClone();
