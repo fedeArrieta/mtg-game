@@ -1,0 +1,221 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MtgParty.Desktop.ViewModels"
+             xmlns:views="using:MtgParty.Desktop.Views"
+             x:Class="MtgParty.Desktop.Views.RunView"
+             x:DataType="vm:RunViewModel">
+  <UserControl.Resources>
+    <DataTemplate x:Key="OfferTemplate" x:DataType="vm:OfferCardViewModel">
+      <Border Classes="offer" Classes.rare="{Binding IsRare}" Width="190" MinHeight="150" Margin="0,0,12,12">
+        <StackPanel Spacing="4">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Text="{Binding Name}" FontWeight="Bold" TextWrapping="Wrap" />
+            <TextBlock Grid.Column="1" Text="{Binding Cost}" FontSize="11" Margin="4,0,0,0" />
+          </Grid>
+          <TextBlock Text="{Binding TypeLine}" FontSize="11" FontStyle="Italic" />
+          <TextBlock Text="{Binding Text}" FontSize="12" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding Stats}" FontWeight="Bold" FontSize="15" HorizontalAlignment="Right" />
+        </StackPanel>
+      </Border>
+    </DataTemplate>
+  </UserControl.Resources>
+
+  <UserControl.Styles>
+    <Style Selector="Border.offer">
+      <Setter Property="Background" Value="#EFE3C8" />
+      <Setter Property="BorderBrush" Value="#BFAE8A" />
+      <Setter Property="BorderThickness" Value="2" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Padding" Value="10" />
+      <Setter Property="TextElement.Foreground" Value="#2B2131" />
+    </Style>
+    <Style Selector="Border.offer.rare">
+      <Setter Property="BorderBrush" Value="#D4A64A" />
+      <Setter Property="BorderThickness" Value="3" />
+    </Style>
+    <Style Selector="ToggleButton.color">
+      <Setter Property="Width" Value="170" />
+      <Setter Property="Height" Value="90" />
+      <Setter Property="Margin" Value="0,0,10,10" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="VerticalContentAlignment" Value="Top" />
+    </Style>
+  </UserControl.Styles>
+
+  <DockPanel>
+    <!-- Barra de la run -->
+    <Border DockPanel.Dock="Top" Classes="card" Margin="4,8,4,4" IsVisible="{Binding HasRun}">
+      <Grid ColumnDefinitions="*,Auto">
+        <StackPanel Spacing="4">
+          <TextBlock Text="{Binding Header}" FontWeight="Bold" />
+          <ItemsControl ItemsSource="{Binding Relics}">
+            <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:RelicViewModel">
+                <Border Background="#3A3149" CornerRadius="10" Padding="8,2" Margin="0,0,6,4" ToolTip.Tip="{Binding Text}">
+                  <TextBlock Text="{Binding Name}" FontSize="12" Foreground="{StaticResource GoldBrush}" />
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+        <Button Grid.Column="1" Content="Abandonar la run" Command="{Binding AbandonCommand}" VerticalAlignment="Top"
+                IsVisible="{Binding !IsEnd}" ToolTip.Tip="Borra la run guardada y vuelve al inicio" />
+      </Grid>
+    </Border>
+
+    <TextBlock DockPanel.Dock="Bottom" Classes="error" Margin="8,4" Text="{Binding Message}" TextWrapping="Wrap"
+               IsVisible="{Binding Message, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+    <Panel>
+      <!-- Inicio -->
+      <ScrollViewer IsVisible="{Binding IsStart}">
+        <StackPanel Margin="16" Spacing="10" MaxWidth="980" HorizontalAlignment="Left">
+          <TextBlock Classes="h2" Text="Roguelike: el camino de los Comandantes" />
+          <TextBlock TextWrapping="Wrap" Classes="muted"
+                     Text="Armás un mazo con un draft, recorrés tres actos de salas (duelos, élites, desafíos, descansos y tesoros) y al final de cada acto peleás contra un jefe Commander. Tus vidas se mantienen entre duelos: si llegás a 0, se termina la run." />
+          <TextBlock Text="Elegí uno o dos colores:" FontWeight="Bold" Margin="0,8,0,0" />
+          <ItemsControl ItemsSource="{Binding ColorChoices}">
+            <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:ColorChoiceViewModel">
+                <ToggleButton Classes="color" IsChecked="{Binding Selected, Mode=OneWay}"
+                              Command="{Binding $parent[UserControl].((vm:RunViewModel)DataContext).ToggleColorCommand}"
+                              CommandParameter="{Binding}">
+                  <StackPanel Spacing="4">
+                    <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="16" />
+                    <TextBlock Text="{Binding Hint}" FontSize="12" TextWrapping="Wrap" />
+                  </StackPanel>
+                </ToggleButton>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <Button Classes="primary" Padding="16,10" Content="Empezar una run nueva" Command="{Binding NewRunCommand}" />
+            <Button Padding="16,10" Content="Seguir la run guardada" Command="{Binding ContinueRunCommand}" IsVisible="{Binding HasSavedRun}" />
+          </StackPanel>
+        </StackPanel>
+      </ScrollViewer>
+
+      <!-- Draft y recompensas -->
+      <ScrollViewer IsVisible="{Binding IsPicking}">
+        <StackPanel Margin="12" Spacing="8">
+          <TextBlock Classes="h2" Text="{Binding PickTitle}" />
+          <TextBlock Classes="muted" Text="{Binding PickSubtitle}" TextWrapping="Wrap" />
+          <Border Classes="card" IsVisible="{Binding NewRelic, Converter={x:Static ObjectConverters.IsNotNull}}" HorizontalAlignment="Left">
+            <TextBlock TextWrapping="Wrap">
+              <Run Text="Nueva reliquia: " /><Run Text="{Binding NewRelic.Name}" FontWeight="Bold" Foreground="{StaticResource GoldBrush}" />
+              <Run Text=" · " /><Run Text="{Binding NewRelic.Text}" />
+            </TextBlock>
+          </Border>
+          <ItemsControl ItemsSource="{Binding Offer}">
+            <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:OfferCardViewModel">
+                <Button Padding="0" Background="Transparent" BorderThickness="0"
+                        Command="{Binding Owner.PickCommand}" CommandParameter="{Binding}"
+                        ContentTemplate="{StaticResource OfferTemplate}" Content="{Binding}" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <Button Content="Saltear" Command="{Binding SkipPickCommand}" IsVisible="{Binding CanSkipPick}" />
+          <Expander Header="Ver tu mazo" Margin="0,8,0,0">
+            <ItemsControl ItemsSource="{Binding DeckList}" ItemTemplate="{StaticResource OfferTemplate}">
+              <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+            </ItemsControl>
+          </Expander>
+        </StackPanel>
+      </ScrollViewer>
+
+      <!-- Mapa -->
+      <Grid IsVisible="{Binding IsMap}" ColumnDefinitions="*,Auto">
+        <ScrollViewer x:Name="MapScroll">
+          <StackPanel Margin="12" Spacing="6">
+            <TextBlock Classes="h2"><Run Text="Mapa del acto " /><Run Text="{Binding Act}" /></TextBlock>
+            <TextBlock Classes="muted" Text="Elegí la próxima sala. Se sube de abajo hacia arriba; arriba de todo espera el jefe." />
+            <Canvas x:Name="MapCanvas" HorizontalAlignment="Left" />
+          </StackPanel>
+        </ScrollViewer>
+        <Border Grid.Column="1" Width="300" BorderBrush="{StaticResource LineBrush}" BorderThickness="1,0,0,0" Padding="12">
+          <StackPanel Spacing="6">
+            <TextBlock Classes="h2" Text="Referencias" />
+            <TextBlock TextWrapping="Wrap" Text="⚔ Duelo: un rival común. Ganás una carta." />
+            <TextBlock TextWrapping="Wrap" Text="☠ Élite: más difícil. Carta mejor y reliquia." />
+            <TextBlock TextWrapping="Wrap" Text="? Desafío: un puzzle de ganar este turno. Si lo resolvés, reliquia." />
+            <TextBlock TextWrapping="Wrap" Text="☕ Descanso: te curás o sacás una carta." />
+            <TextBlock TextWrapping="Wrap" Text="◆ Tesoro: una reliquia." />
+            <TextBlock TextWrapping="Wrap" Text="♛ Jefe: un Commander con su comandante." />
+            <Expander Header="Ver tu mazo" Margin="0,8,0,0">
+              <ItemsControl ItemsSource="{Binding DeckList}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:OfferCardViewModel">
+                    <TextBlock Margin="0,0,0,2" ToolTip.Tip="{Binding Text}"><Run Text="{Binding Name}" /><Run Text="  " /><Run Text="{Binding Cost}" Foreground="{StaticResource MutedBrush}" /></TextBlock>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </Expander>
+          </StackPanel>
+        </Border>
+      </Grid>
+
+      <!-- Duelo -->
+      <Panel IsVisible="{Binding IsDuel}">
+        <views:DuelView DataContext="{Binding Duel}" />
+      </Panel>
+
+      <!-- Descanso -->
+      <ScrollViewer IsVisible="{Binding IsRest}">
+        <StackPanel Margin="12" Spacing="8">
+          <TextBlock Classes="h2" Text="Descanso" />
+          <TextBlock Classes="muted" Text="Una fogata tranquila. Elegí una sola cosa." />
+          <Button Classes="primary" Padding="16,10" Content="{Binding RestHealText}" Command="{Binding HealCommand}" HorizontalAlignment="Left" />
+          <TextBlock Text="O tocá una carta para sacarla del mazo:" Margin="0,8,0,0" IsVisible="{Binding CanRemoveCards}" />
+          <TextBlock Classes="muted" Text="Tu mazo ya tiene el mínimo de hechizos: no podés sacar más." IsVisible="{Binding !CanRemoveCards}" />
+          <ItemsControl ItemsSource="{Binding DeckList}" IsVisible="{Binding CanRemoveCards}">
+            <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:OfferCardViewModel">
+                <Button Padding="0" Background="Transparent" BorderThickness="0"
+                        Command="{Binding Owner.RemoveCardCommand}" CommandParameter="{Binding}"
+                        ContentTemplate="{StaticResource OfferTemplate}" Content="{Binding}" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </ScrollViewer>
+
+      <!-- Tesoro -->
+      <StackPanel IsVisible="{Binding IsTreasure}" Margin="16" Spacing="10">
+        <TextBlock Classes="h2" Text="¡Una reliquia!" />
+        <Border Classes="card" HorizontalAlignment="Left" MaxWidth="520">
+          <StackPanel Spacing="4">
+            <TextBlock Text="{Binding NewRelic.Name}" FontWeight="Bold" FontSize="18" Foreground="{StaticResource GoldBrush}" />
+            <TextBlock Text="{Binding NewRelic.Text}" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+        <Button Classes="primary" Padding="16,10" Content="Volver al mapa" Command="{Binding ContinueFromTreasureCommand}" />
+      </StackPanel>
+
+      <!-- Desafío -->
+      <DockPanel IsVisible="{Binding IsChallenge}">
+        <Border DockPanel.Dock="Top" Classes="card" Margin="4,0,4,4">
+          <Grid ColumnDefinitions="*,Auto,Auto">
+            <TextBlock VerticalAlignment="Center" TextWrapping="Wrap"
+                       Text="Sala de desafío: ganá este turno. Podés deshacer y reiniciar las veces que quieras; si lo resolvés, te llevás una reliquia." />
+            <Button Grid.Column="1" Classes="primary" Margin="8,0" Content="Reclamar la reliquia"
+                    Command="{Binding ClaimChallengeCommand}" IsEnabled="{Binding Challenge.IsWon, FallbackValue=False}" />
+            <Button Grid.Column="2" Content="Rendirse" Command="{Binding GiveUpChallengeCommand}" />
+          </Grid>
+        </Border>
+        <views:PuzzleView DataContext="{Binding Challenge}" />
+      </DockPanel>
+
+      <!-- Final -->
+      <StackPanel IsVisible="{Binding IsEnd}" Margin="16" Spacing="10">
+        <TextBlock Classes="h1" Text="{Binding EndTitle}" />
+        <TextBlock Text="{Binding EndText}" TextWrapping="Wrap" />
+        <Button Classes="primary" Padding="16,10" Content="Volver al inicio" Command="{Binding AbandonCommand}" />
+      </StackPanel>
+    </Panel>
+  </DockPanel>
+</UserControl>
