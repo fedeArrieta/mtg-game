@@ -1,6 +1,6 @@
 namespace MtgEngine;
 
-public enum Zone { Library, Hand, Battlefield, Graveyard, Stack, Exile }
+public enum Zone { Library, Hand, Battlefield, Graveyard, Stack, Exile, Command }
 
 /// <summary>Los pasos del turno, en orden.</summary>
 public enum Step
@@ -26,6 +26,9 @@ public sealed class CardInstance
     public int Controller { get; internal set; }
     public Zone Zone { get; internal set; }
     public bool IsToken { get; internal init; }
+    /// <summary>Comandante: se lanza desde la zona de mando y vuelve ahí si deja el campo. Cada lanzamiento cuesta {2} más.</summary>
+    public bool IsCommander { get; internal init; }
+    public int CommanderCasts { get; internal set; }
 
     public bool Tapped { get; internal set; }
     public bool SummoningSick { get; internal set; }
@@ -72,6 +75,7 @@ public sealed class PlayerState
     public List<CardInstance> Hand { get; private set; } = [];
     public List<CardInstance> Battlefield { get; private set; } = [];
     public List<CardInstance> Graveyard { get; private set; } = [];
+    public List<CardInstance> Command { get; private set; } = [];
     public ManaPool Pool { get; private set; } = new();
     public bool LandPlayedThisTurn { get; internal set; }
     public bool HasLost { get; internal set; }
@@ -86,6 +90,7 @@ public sealed class PlayerState
         p.Hand = Hand.Select(c => cards[c.Id]).ToList();
         p.Battlefield = Battlefield.Select(c => cards[c.Id]).ToList();
         p.Graveyard = Graveyard.Select(c => cards[c.Id]).ToList();
+        p.Command = Command.Select(c => cards[c.Id]).ToList();
         p.Pool = Pool.Clone();
         return p;
     }

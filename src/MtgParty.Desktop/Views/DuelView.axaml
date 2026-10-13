@@ -1,0 +1,145 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MtgParty.Desktop.ViewModels"
+             x:Class="MtgParty.Desktop.Views.DuelView"
+             x:DataType="vm:DuelViewModel">
+  <UserControl.Resources>
+    <DataTemplate x:Key="DuelCardTemplate" x:DataType="vm:DuelCardViewModel">
+      <Button Command="{Binding ClickCommand}" Padding="0" Background="Transparent" BorderThickness="0" Margin="0,0,8,8">
+        <Border Classes="playcard" Classes.selected="{Binding Selected}" Opacity="{Binding Opacity}" Width="150" MinHeight="90">
+          <StackPanel Spacing="2">
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Text="{Binding Name}" FontWeight="Bold" TextWrapping="Wrap" />
+              <TextBlock Grid.Column="1" Text="{Binding Cost}" FontSize="11" Margin="4,0,0,0" />
+            </Grid>
+            <TextBlock Text="{Binding Text}" FontSize="11" TextWrapping="Wrap" Opacity="0.85" />
+            <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+              <TextBlock Text="{Binding State}" FontSize="11" FontStyle="Italic" TextWrapping="Wrap" />
+              <TextBlock Grid.Column="1" Text="{Binding Stats}" FontWeight="Bold" FontSize="15" />
+            </Grid>
+          </StackPanel>
+        </Border>
+      </Button>
+    </DataTemplate>
+  </UserControl.Resources>
+
+  <UserControl.Styles>
+    <Style Selector="Border.playcard">
+      <Setter Property="Background" Value="#EFE3C8" />
+      <Setter Property="BorderBrush" Value="#BFAE8A" />
+      <Setter Property="BorderThickness" Value="2" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Padding" Value="8" />
+      <Setter Property="TextElement.Foreground" Value="#2B2131" />
+    </Style>
+    <Style Selector="Border.playcard.selected">
+      <Setter Property="BorderBrush" Value="#D4A64A" />
+      <Setter Property="BorderThickness" Value="4" />
+    </Style>
+    <Style Selector="TextBlock.zone">
+      <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Margin" Value="0,6,0,4" />
+    </Style>
+    <Style Selector="ItemsControl.cards">
+      <Setter Property="ItemTemplate" Value="{StaticResource DuelCardTemplate}" />
+      <Setter Property="ItemsPanel">
+        <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+      </Setter>
+    </Style>
+  </UserControl.Styles>
+
+  <Grid ColumnDefinitions="*,290">
+    <ScrollViewer>
+      <StackPanel Margin="4,8,16,8" Spacing="4">
+        <Border Classes="card">
+          <StackPanel>
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel>
+                <TextBlock Text="{Binding EnemyName}" FontWeight="Bold" FontSize="16" />
+                <TextBlock Text="{Binding EnemyText}" Classes="muted" FontSize="12" TextWrapping="Wrap" />
+              </StackPanel>
+              <Button Grid.Column="1" Command="{Binding TargetEnemyCommand}" IsEnabled="{Binding IsTargeting}" VerticalAlignment="Top"
+                      ToolTip.Tip="Elegir al rival como objetivo">
+                <TextBlock><Run Text="{Binding EnemyLife}" FontWeight="Bold" FontSize="18" /><Run Text=" vidas" /></TextBlock>
+              </Button>
+            </Grid>
+            <TextBlock Classes="muted" FontSize="12" Margin="0,6,0,0" Text="{Binding EnemyInfo}" />
+            <TextBlock Classes="muted" FontSize="12" Text="{Binding EnemyLands}" />
+            <TextBlock Foreground="{StaticResource GoldBrush}" FontSize="12" Text="{Binding CommanderInfo}"
+                       IsVisible="{Binding CommanderInfo, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+            <TextBlock Classes="zone" Text="Criaturas del rival" />
+            <ItemsControl Classes="cards" ItemsSource="{Binding EnemyCreatures}" />
+          </StackPanel>
+        </Border>
+
+        <Border Padding="12,8" Margin="0,4">
+          <StackPanel Spacing="4">
+            <TextBlock>
+              <Run Text="{Binding StepText}" FontWeight="Bold" />
+              <Run Text="  ·  " Foreground="{StaticResource MutedBrush}" /><Run Text="{Binding Mana}" />
+            </TextBlock>
+            <TextBlock Text="{Binding Prompt}" FontSize="15" TextWrapping="Wrap" Classes.won="{Binding IsWon}" />
+            <TextBlock Text="{Binding Message}" TextWrapping="Wrap" IsVisible="{Binding Message, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                       Classes.error="{Binding MessageIsError}" Classes.muted="{Binding !MessageIsError}" />
+          </StackPanel>
+        </Border>
+
+        <Border Classes="card">
+          <StackPanel>
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel>
+                <TextBlock Text="Vos" FontWeight="Bold" FontSize="16" />
+                <TextBlock Classes="muted" FontSize="12" Text="{Binding YourInfo}" />
+              </StackPanel>
+              <Button Grid.Column="1" Command="{Binding TargetYouCommand}" IsEnabled="{Binding IsTargeting}" VerticalAlignment="Top"
+                      ToolTip.Tip="Elegirte como objetivo">
+                <TextBlock><Run Text="{Binding YourLife}" FontWeight="Bold" FontSize="18" /><Run Text=" vidas" /></TextBlock>
+              </Button>
+            </Grid>
+            <TextBlock Classes="zone" Text="Tus criaturas" />
+            <ItemsControl Classes="cards" ItemsSource="{Binding YourCreatures}" />
+            <TextBlock Classes="zone" Text="Tus tierras" />
+            <ItemsControl Classes="cards" ItemsSource="{Binding YourLands}" />
+            <TextBlock Classes="zone" Text="Tu mano" />
+            <ItemsControl Classes="cards" ItemsSource="{Binding Hand}" />
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </ScrollViewer>
+
+    <Border Grid.Column="1" BorderBrush="{StaticResource LineBrush}" BorderThickness="1,0,0,0" Padding="12">
+      <DockPanel>
+        <StackPanel DockPanel.Dock="Top" Spacing="8">
+          <Button Classes="primary" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="10"
+                  Content="{Binding PassLabel}" Command="{Binding PassCommand}" IsVisible="{Binding !IsOver}" />
+          <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Pasar el turno"
+                  Command="{Binding PassTurnCommand}" IsVisible="{Binding !IsOver}"
+                  ToolTip.Tip="Termina tu turno sin hacer nada más y sigue hasta tu próxima decisión" />
+          <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Cancelar objetivo"
+                  Command="{Binding CancelTargetCommand}" IsVisible="{Binding IsTargeting}" />
+          <Button Classes="primary" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="10"
+                  Content="Seguir" Command="{Binding ContinueCommand}" IsVisible="{Binding IsOver}" />
+          <TextBlock Classes="zone" Text="Pila (arriba se resuelve primero)" />
+          <ItemsControl ItemsSource="{Binding Stack}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="x:String">
+                <Border Classes="card" Padding="8,4" Margin="0,0,0,4"><TextBlock Text="{Binding}" TextWrapping="Wrap" /></Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock Classes="zone" Text="Qué pasó (lo último arriba)" />
+        </StackPanel>
+        <ScrollViewer>
+          <ItemsControl ItemsSource="{Binding Log}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="x:String">
+                <TextBlock Text="{Binding}" TextWrapping="Wrap" FontSize="12" Classes="muted" Margin="0,0,0,4" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+      </DockPanel>
+    </Border>
+  </Grid>
+</UserControl>

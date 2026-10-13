@@ -12,6 +12,9 @@
       <TextBlock Classes="h1" Text="Mesa del Caos" />
     </Border>
     <TabControl Margin="8,0,8,0" SelectedIndex="{Binding SelectedTab}">
+      <TabItem Header="Roguelike">
+        <views:RunView DataContext="{Binding Run}" />
+      </TabItem>
       <TabItem Header="Puzzles">
         <views:PuzzleView DataContext="{Binding Puzzles}" />
       </TabItem>

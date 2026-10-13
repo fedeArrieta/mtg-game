@@ -44,7 +44,7 @@ public partial class CardViewModel(CardInstance card, CardPlace place, PuzzleVie
 /// <summary>Pantalla de puzzles: lista, tablero y controles. Vos jugás; el rival bloquea solo.</summary>
 public partial class PuzzleViewModel : ObservableObject
 {
-    readonly SolvedStore solvedStore = new();
+    readonly SolvedStore? solvedStore = new();
     PuzzleSession? session;
     CardInstance? pendingCast;
 
@@ -75,11 +75,23 @@ public partial class PuzzleViewModel : ObservableObject
 
     public PuzzleViewModel()
     {
-        var solved = solvedStore.Load();
+        var solved = solvedStore!.Load();
         foreach (var p in PuzzleLibrary.BuiltIn)
             Puzzles.Add(new PuzzleItemViewModel(p) { Solved = solved.Contains(p.Id) });
         Selected = Puzzles.FirstOrDefault(p => !p.Solved) ?? Puzzles.FirstOrDefault();
     }
+
+    /// <summary>Un solo puzzle, sin lista, pistas ni progreso guardado: las salas de desafío del roguelike.</summary>
+    public PuzzleViewModel(Puzzle challenge)
+    {
+        solvedStore = null;
+        IsLibrary = false;
+        Puzzles.Add(new PuzzleItemViewModel(challenge, isCustom: true));
+        Selected = Puzzles[0];
+    }
+
+    /// <summary>Si muestra la lista de puzzles, las pistas y el botón para abrir archivos.</summary>
+    public bool IsLibrary { get; } = true;
 
     public string Progress => $"{Puzzles.Count(p => p.Solved && !p.IsCustom)} de {Puzzles.Count(p => !p.IsCustom)} resueltos";
 
@@ -255,7 +267,7 @@ public partial class PuzzleViewModel : ObservableObject
             : g.Stack.Count > 0 ? "Resolver la pila"
             : "Pasar al siguiente paso";
 
-        if (IsWon && Selected is { Solved: false } solvedItem)
+        if (IsWon && Selected is { Solved: false } solvedItem && solvedStore is not null)
         {
             solvedItem.Solved = true;
             solvedStore.Save(Puzzles.Where(p => p.Solved && !p.IsCustom).Select(p => p.Puzzle.Id));

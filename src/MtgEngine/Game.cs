@@ -64,11 +64,21 @@ public sealed class Game
 
     public CardInstance AddToGraveyard(int player, string cardId) => AddToZone(player, CardCatalog.Get(cardId), Zone.Graveyard);
 
+    /// <summary>Pone una carta en la zona de mando como comandante de ese jugador.</summary>
+    public CardInstance AddCommander(int player, string cardId) => AddToZone(player, CardCatalog.Get(cardId), Zone.Command, isCommander: true);
+
+    /// <summary>Crea una ficha de criatura en juego, sin mareo (para preparar partidas).</summary>
+    public CardInstance AddToken(int player, string name, int power, int toughness, params Keyword[] keywords)
+    {
+        var def = new CardDefinition { Id = "token", Name = name, Type = CardType.Creature, Power = power, Toughness = toughness, Keywords = [.. keywords] };
+        return AddToZone(player, def, Zone.Battlefield, isToken: true);
+    }
+
     public void SetLife(int player, int life) => Players[player].Life = life;
 
-    CardInstance AddToZone(int player, CardDefinition def, Zone zone, bool isToken = false)
+    CardInstance AddToZone(int player, CardDefinition def, Zone zone, bool isToken = false, bool isCommander = false)
     {
-        var c = new CardInstance { Id = nextId++, Definition = def, Owner = player, Controller = player, Zone = zone, IsToken = isToken };
+        var c = new CardInstance { Id = nextId++, Definition = def, Owner = player, Controller = player, Zone = zone, IsToken = isToken, IsCommander = isCommander };
         ZoneList(Players[player], zone).Add(c);
         return c;
     }
@@ -79,6 +89,7 @@ public sealed class Game
         Zone.Hand => p.Hand,
         Zone.Battlefield => p.Battlefield,
         Zone.Graveyard => p.Graveyard,
+        Zone.Command => p.Command,
         _ => throw new ArgumentOutOfRangeException(nameof(zone)),
     };
 
@@ -89,9 +100,16 @@ public sealed class Game
     public CardInstance? FindOnBattlefield(int id) => Players.SelectMany(p => p.Battlefield).FirstOrDefault(c => c.Id == id);
 
     public CardInstance Find(int id) =>
-        Players.SelectMany(p => p.Library.Concat(p.Hand).Concat(p.Battlefield).Concat(p.Graveyard))
+        Players.SelectMany(AllCards)
             .Concat(Stack.Select(s => s.Card))
             .FirstOrDefault(c => c.Id == id) ?? throw new RulesException("Esa carta no existe.");
+
+    static IEnumerable<CardInstance> AllCards(PlayerState p) =>
+        p.Library.Concat(p.Hand).Concat(p.Battlefield).Concat(p.Graveyard).Concat(p.Command);
+
+    /// <summary>Lo que cuesta lanzar la carta ahora, con el impuesto si es un comandante.</summary>
+    public static ManaCost CostOf(CardInstance c) =>
+        c.IsCommander ? c.Definition.ManaCost.PlusGeneric(2 * c.CommanderCasts) : c.Definition.ManaCost;
 
     public bool IsMainPhase => Step is Step.Main1 or Step.Main2;
 
@@ -136,9 +154,10 @@ public sealed class Game
     {
         RequireOngoing();
         var p = Priority;
-        var cost = InHand(p, cardId).Definition.ManaCost;
+        var card = Castable(p, cardId);
+        var cost = CostOf(card);
         var lands = PlanLandsFor(p, cost)
-            ?? throw new RulesException($"No te alcanza el maná para {InHand(p, cardId).Name}: cuesta {cost}.");
+            ?? throw new RulesException($"No te alcanza el maná para {card.Name}: cuesta {cost}.");
         var snapshot = lands.Select(l => (Land: l, l.Tapped)).ToList();
         var pool = p.Pool.Clone();
         foreach (var land in lands) TapForMana(land.Id);
@@ -187,8 +206,9 @@ public sealed class Game
         RequireOngoing();
         if (Awaiting != Pending.None) throw new RulesException("Primero hay que declarar atacantes o bloqueadores.");
         var p = Priority;
-        var card = InHand(p, cardId);
+        var card = Castable(p, cardId);
         var def = card.Definition;
+        var cost = CostOf(card);
         if (def.IsPermanent && def.Type == CardType.Land) throw new RulesException("Las tierras no se lanzan: se juegan.");
         if (def.Type != CardType.Instant && !CanActAtSorcerySpeed)
             throw new RulesException($"{card.Name} solo se puede lanzar en tu fase principal, con la pila vacía.");
@@ -198,10 +218,15 @@ public sealed class Game
             if (!IsLegalTarget(def.Target, target.Value)) throw new RulesException("Ese objetivo no es válido para este hechizo.");
         }
         else target = null;
-        if (!p.Pool.Pay(def.ManaCost))
-            throw new RulesException($"No te alcanza el maná para {card.Name}: cuesta {def.ManaCost} y tenés {p.Pool}.");
+        if (!p.Pool.Pay(cost))
+            throw new RulesException($"No te alcanza el maná para {card.Name}: cuesta {cost} y tenés {p.Pool}.");
 
-        p.Hand.Remove(card);
+        if (card.Zone == Zone.Command)
+        {
+            p.Command.Remove(card);
+            card.CommanderCasts++;
+        }
+        else p.Hand.Remove(card);
         card.Zone = Zone.Stack;
         Stack.Add(new StackItem(card, p.Index, target));
         passesInRow = 0;
@@ -497,6 +522,7 @@ public sealed class Game
         c.Tapped = false;
         Log($"{c.Name} {reason}.");
         if (c.IsToken) { c.Zone = Zone.Exile; return; }
+        if (ToCommandZone(c)) return;
         c.Zone = Zone.Graveyard;
         Players[c.Owner].Graveyard.Add(c);
     }
@@ -507,10 +533,21 @@ public sealed class Game
         RemoveFromCombat(c);
         c.ClearEndOfTurn();
         c.Tapped = false;
+        if (c.IsToken) { Log($"{c.Name} deja de existir."); c.Zone = Zone.Exile; return; }
+        if (ToCommandZone(c)) return;
         Log($"{c.Name} vuelve a la mano de su dueño.");
-        if (c.IsToken) { c.Zone = Zone.Exile; return; }
         c.Zone = Zone.Hand;
         Players[c.Owner].Hand.Add(c);
+    }
+
+    /// <summary>Un comandante que deja el campo vuelve a la zona de mando en vez de ir a otra zona.</summary>
+    bool ToCommandZone(CardInstance c)
+    {
+        if (!c.IsCommander) return false;
+        c.Zone = Zone.Command;
+        Players[c.Owner].Command.Add(c);
+        Log($"{c.Name} vuelve a la zona de mando.");
+        return true;
     }
 
     /// <summary>Una criatura que deja el campo deja de atacar o bloquear. Un atacante bloqueado sigue bloqueado.</summary>
@@ -558,13 +595,17 @@ public sealed class Game
     static CardInstance InHand(PlayerState p, int cardId) =>
         p.Hand.FirstOrDefault(c => c.Id == cardId) ?? throw new RulesException("Esa carta no está en tu mano.");
 
+    /// <summary>Una carta que se puede lanzar: de la mano o, si es el comandante, de la zona de mando.</summary>
+    static CardInstance Castable(PlayerState p, int cardId) =>
+        p.Hand.Concat(p.Command).FirstOrDefault(c => c.Id == cardId) ?? throw new RulesException("Esa carta no está en tu mano.");
+
     internal void Log(string message) => History.Add(message);
 
     /// <summary>Copia completa e independiente del estado, para deshacer jugadas o probar líneas.</summary>
     public Game Clone()
     {
         var g = (Game)MemberwiseClone();
-        var cards = Players.SelectMany(p => p.Library.Concat(p.Hand).Concat(p.Battlefield).Concat(p.Graveyard))
+        var cards = Players.SelectMany(AllCards)
             .Concat(Stack.Select(s => s.Card))
             .ToDictionary(c => c.Id, c => c.Clone());
         g.Players = Players.Select(p => p.Clone(cards)).ToArray();

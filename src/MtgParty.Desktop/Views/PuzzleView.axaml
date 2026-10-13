@@ -49,9 +49,9 @@
     </Style>
   </UserControl.Styles>
 
-  <Grid ColumnDefinitions="230,*,280">
+  <Grid ColumnDefinitions="Auto,*,280">
     <!-- Lista de puzzles -->
-    <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,1,0" Padding="12">
+    <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,1,0" Padding="12" Width="230" IsVisible="{Binding IsLibrary}">
       <DockPanel>
         <StackPanel DockPanel.Dock="Top" Spacing="2" Margin="0,0,0,10">
           <TextBlock Classes="h2" Text="Puzzles" />
@@ -145,7 +145,7 @@
             <Button Grid.Column="2" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Reiniciar"
                     Command="{Binding RestartCommand}" />
             <Button Grid.Column="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="Pista"
-                    Command="{Binding HintCommand}" />
+                    Command="{Binding HintCommand}" IsEnabled="{Binding IsLibrary}" />
           </Grid>
           <TextBlock Classes="zone" Text="Pila (arriba se resuelve primero)" />
           <ItemsControl ItemsSource="{Binding Stack}">
