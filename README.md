@@ -17,7 +17,15 @@ La app de escritorio (C#, .NET 8, Avalonia) permite:
 
 Todo el contenido es original. Es un proyecto de fans gratuito y no comercial, dentro de la Fan Content Policy de Wizards of the Coast.
 
-## Motor de reglas (etapa 2, en progreso)
+## Puzzles "ganá este turno" (etapa 2)
+
+En la pestaña **Puzzles** de la app hay 10 puzzles de dificultad creciente. Es tu fase principal y tenés que ganar antes de que termine el turno. Tocás cartas de la mano para jugarlas (las tierras se giran solas al lanzar), elegís objetivos, declarás atacantes y pasás la prioridad. Se puede deshacer, reiniciar y pedir una pista.
+
+- El rival no tiene cartas en la mano y bloquea de la mejor forma según lo que ve en la mesa: no anticipa los trucos que lances después de los bloqueos.
+- Cada puzzle se verifica con un solucionador por fuerza bruta (`PuzzleSolver`), que también da las pistas. Los tests comprueban que todos tienen solución y que varios dejan de tenerla con una vida más para el rival.
+- Los puzzles están en `src/MtgEngine/Resources/puzzles.json`. El progreso se guarda en la carpeta de datos del usuario.
+
+## Motor de reglas
 
 `src/MtgEngine` es una librería con reglas simplificadas de Magic para dos jugadores, base de los puzzles y del roguelike:
 
