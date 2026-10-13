@@ -10,8 +10,8 @@ public class CastingTests
     public void CreatureSpellResolvesWithSummoningSickness()
     {
         var g = NewGame();
-        g.AddMana(Me, "bosque", "bosque");
-        var wolf = g.AddToHand(Me, "lobo-musgo");
+        g.AddMana(Me, "forest", "forest");
+        var wolf = g.AddToHand(Me, "grizzly-bears");
         g.Cast(wolf.Id);
         Assert.Single(g.Stack);
         g.BothPass();
@@ -25,8 +25,8 @@ public class CastingTests
     public void CannotCastWithoutEnoughMana()
     {
         var g = NewGame();
-        g.AddMana(Me, "bosque");
-        var behemoth = g.AddToHand(Me, "behemot-valle");
+        g.AddMana(Me, "forest");
+        var behemoth = g.AddToHand(Me, "colossal-dreadmaw");
         var ex = Assert.Throws<RulesException>(() => g.Cast(behemoth.Id));
         Assert.Contains("maná", ex.Message);
         Assert.Contains(behemoth, g.Players[Me].Hand);
@@ -36,26 +36,26 @@ public class CastingTests
     public void OnlyOneLandPerTurn()
     {
         var g = NewGame();
-        g.PlayLand(g.AddToHand(Me, "bosque").Id);
-        Assert.Throws<RulesException>(() => g.PlayLand(g.AddToHand(Me, "bosque").Id));
+        g.PlayLand(g.AddToHand(Me, "forest").Id);
+        Assert.Throws<RulesException>(() => g.PlayLand(g.AddToHand(Me, "forest").Id));
     }
 
     [Fact]
     public void SorceriesNeedEmptyStackAndOwnMainPhase()
     {
         var g = NewGame();
-        g.AddMana(Me, "montana", "isla", "isla", "isla");
-        g.Cast(g.AddToHand(Me, "chispazo").Id, Target.OfPlayer(Opp));
-        Assert.Throws<RulesException>(() => g.Cast(g.AddToHand(Me, "ojo-archivo").Id));
+        g.AddMana(Me, "mountain", "island", "island", "island");
+        g.Cast(g.AddToHand(Me, "shock").Id, Target.OfPlayer(Opp));
+        Assert.Throws<RulesException>(() => g.Cast(g.AddToHand(Me, "divination").Id));
     }
 
     [Fact]
     public void BurnSpellKillsCreatureAndGoesToGraveyard()
     {
         var g = NewGame();
-        var bear = g.AddToBattlefield(Opp, "lobo-musgo");
-        g.AddMana(Me, "montana");
-        var bolt = g.AddToHand(Me, "chispazo");
+        var bear = g.AddToBattlefield(Opp, "grizzly-bears");
+        g.AddMana(Me, "mountain");
+        var bolt = g.AddToHand(Me, "shock");
         g.Cast(bolt.Id, Target.OfCard(bear.Id));
         g.BothPass();
         Assert.Contains(bear, g.Players[Opp].Graveyard);
@@ -66,13 +66,13 @@ public class CastingTests
     public void StackResolvesLastInFirstOut()
     {
         var g = NewGame();
-        var wolf = g.AddToBattlefield(Me, "lobo-musgo");
-        g.AddMana(Me, "bosque");
-        var growth = g.AddToHand(Me, "crecimiento-salvaje");
-        var bolt = g.AddToHand(Opp, "chispazo");
+        var wolf = g.AddToBattlefield(Me, "grizzly-bears");
+        g.AddMana(Me, "forest");
+        var growth = g.AddToHand(Me, "giant-growth");
+        var bolt = g.AddToHand(Opp, "shock");
 
         g.PassPriority(); // el rival recibe prioridad
-        g.AddMana(Opp, "montana");
+        g.AddMana(Opp, "mountain");
         g.Cast(bolt.Id, Target.OfCard(wolf.Id));
         g.PassPriority(); // vuelve a mí, respondo con el pump
         g.Cast(growth.Id, Target.OfCard(wolf.Id));
@@ -86,20 +86,20 @@ public class CastingTests
     public void SpellFizzlesWhenTargetDisappears()
     {
         var g = NewGame();
-        var wolf = g.AddToBattlefield(Opp, "lobo-musgo");
-        g.AddMana(Me, "pantano", "pantano", "pantano", "isla", "isla");
-        var kill = g.AddToHand(Me, "fin-sombrio");
-        var bounce = g.AddToHand(Me, "retorno-bruma");
+        var wolf = g.AddToBattlefield(Opp, "grizzly-bears");
+        g.AddMana(Me, "swamp", "swamp", "swamp", "island", "island");
+        var kill = g.AddToHand(Me, "murder");
+        var bounce = g.AddToHand(Me, "unsummon");
         g.Cast(kill.Id, Target.OfCard(wolf.Id));
         g.BothPass();
         Assert.Contains(wolf, g.Players[Opp].Graveyard);
 
         // Ahora con respuesta: regreso la criatura y el Fin Sombrío se neutraliza.
         var g2 = NewGame();
-        var w2 = g2.AddToBattlefield(Opp, "lobo-musgo");
-        g2.AddMana(Me, "pantano", "pantano", "pantano", "isla", "isla");
-        var k2 = g2.AddToHand(Me, "fin-sombrio");
-        var b2 = g2.AddToHand(Me, "retorno-bruma");
+        var w2 = g2.AddToBattlefield(Opp, "grizzly-bears");
+        g2.AddMana(Me, "swamp", "swamp", "swamp", "island", "island");
+        var k2 = g2.AddToHand(Me, "murder");
+        var b2 = g2.AddToHand(Me, "unsummon");
         g2.Cast(k2.Id, Target.OfCard(w2.Id));
         g2.Cast(b2.Id, Target.OfCard(w2.Id));
         g2.BothPass();
@@ -113,33 +113,34 @@ public class CastingTests
     public void RitualAddsManaThatCanBeSpent()
     {
         var g = NewGame();
-        g.AddMana(Me, "montana", "montana");
-        g.Cast(g.AddToHand(Me, "ritual-brasas").Id);
+        g.AddMana(Me, "mountain", "mountain", "mountain");
+        g.Cast(g.AddToHand(Me, "pyretic-ritual").Id);
         g.BothPass();
         Assert.Equal(4, g.Players[Me].Pool[Color.Red]);
-        g.Cast(g.AddToHand(Me, "heraldo-trueno").Id);
+        g.Cast(g.AddToHand(Me, "lightning-strike").Id, Target.OfPlayer(Opp));
         g.BothPass();
-        Assert.Equal(18, g.Players[Opp].Life);
+        Assert.Equal(17, g.Players[Opp].Life);
+        Assert.Equal(2, g.Players[Me].Pool[Color.Red]);
     }
 
     [Fact]
     public void TokensAndEnterEffects()
     {
         var g = NewGame();
-        g.AddMana(Me, "bosque", "bosque", "bosque", "llanura", "llanura", "llanura");
-        g.Cast(g.AddToHand(Me, "llamado-manada").Id);
+        g.AddMana(Me, "plains", "plains", "plains", "plains", "plains");
+        g.Cast(g.AddToHand(Me, "raise-the-alarm").Id);
         g.BothPass();
-        g.Cast(g.AddToHand(Me, "mensajera-alada").Id);
+        g.Cast(g.AddToHand(Me, "inspiring-cleric").Id);
         g.BothPass();
-        Assert.Equal(2, g.Players[Me].Battlefield.Count(c => c.IsToken && c.Name == "Lobo"));
-        Assert.Equal(23, g.Players[Me].Life);
+        Assert.Equal(2, g.Players[Me].Battlefield.Count(c => c.IsToken && c.Name == "Soldado"));
+        Assert.Equal(24, g.Players[Me].Life);
     }
 
     [Fact]
     public void ManaEmptiesBetweenSteps()
     {
         var g = NewGame();
-        g.AddMana(Me, "bosque");
+        g.AddMana(Me, "forest");
         g.BothPass(); // pasa a inicio de combate
         Assert.Equal(Step.BeginCombat, g.Step);
         Assert.Equal(0, g.Players[Me].Pool.Total);
@@ -152,7 +153,7 @@ public class CombatTests
     public void UnblockedAttackerDealsDamage()
     {
         var g = NewGame();
-        var wolf = g.AddToBattlefield(Me, "lobo-musgo");
+        var wolf = g.AddToBattlefield(Me, "grizzly-bears");
         g.PassUntil(Step.DeclareAttackers);
         g.DeclareAttackers([wolf.Id]);
         Assert.True(wolf.Tapped);
@@ -164,8 +165,8 @@ public class CombatTests
     public void SummoningSickCreaturesCannotAttackUnlessHaste()
     {
         var g = NewGame();
-        var sick = g.AddToBattlefield(Me, "lobo-musgo", summoningSick: true);
-        var hasty = g.AddToBattlefield(Me, "jinete-brasas", summoningSick: true);
+        var sick = g.AddToBattlefield(Me, "grizzly-bears", summoningSick: true);
+        var hasty = g.AddToBattlefield(Me, "raging-cougar", summoningSick: true);
         g.PassUntil(Step.DeclareAttackers);
         Assert.Throws<RulesException>(() => g.DeclareAttackers([sick.Id]));
         g.DeclareAttackers([hasty.Id]);
@@ -177,8 +178,8 @@ public class CombatTests
     public void DefenderCannotAttackAndVigilanceDoesNotTap()
     {
         var g = NewGame();
-        var wall = g.AddToBattlefield(Me, "muro-espinas");
-        var griffin = g.AddToBattlefield(Me, "grifo-centinela");
+        var wall = g.AddToBattlefield(Me, "wall-of-blossoms");
+        var griffin = g.AddToBattlefield(Me, "griffin-sentinel");
         g.PassUntil(Step.DeclareAttackers);
         Assert.Throws<RulesException>(() => g.DeclareAttackers([wall.Id]));
         g.DeclareAttackers([griffin.Id]);
@@ -189,9 +190,9 @@ public class CombatTests
     public void FlyingCanOnlyBeBlockedByFlyingOrReach()
     {
         var g = NewGame();
-        var griffin = g.AddToBattlefield(Me, "grifo-centinela");
-        var wolf = g.AddToBattlefield(Opp, "lobo-musgo");
-        var archer = g.AddToBattlefield(Opp, "arquera-copas");
+        var griffin = g.AddToBattlefield(Me, "griffin-sentinel");
+        var wolf = g.AddToBattlefield(Opp, "grizzly-bears");
+        var archer = g.AddToBattlefield(Opp, "canopy-spider");
         g.PassUntil(Step.DeclareAttackers);
         g.DeclareAttackers([griffin.Id]);
         g.BothPass();
@@ -200,7 +201,7 @@ public class CombatTests
         g.DeclareBlockers(new Dictionary<int, int> { [archer.Id] = griffin.Id });
         g.PassUntil(Step.CombatDamage);
         Assert.Equal(20, g.Players[Opp].Life);
-        Assert.Equal(2, archer.Damage);
+        Assert.Equal(1, archer.Damage);
         Assert.Equal(1, griffin.Damage);
     }
 
@@ -208,8 +209,8 @@ public class CombatTests
     public void BlockedCreaturesTradeDamage()
     {
         var g = NewGame();
-        var mine = g.AddToBattlefield(Me, "lobo-musgo");
-        var theirs = g.AddToBattlefield(Opp, "lobo-musgo");
+        var mine = g.AddToBattlefield(Me, "grizzly-bears");
+        var theirs = g.AddToBattlefield(Opp, "grizzly-bears");
         g.PassUntil(Step.DeclareAttackers);
         g.DeclareAttackers([mine.Id]);
         g.BothPass();
@@ -224,14 +225,14 @@ public class CombatTests
     public void TrampleAssignsExcessToPlayer()
     {
         var g = NewGame();
-        var behemoth = g.AddToBattlefield(Me, "behemot-valle");
-        var wolf = g.AddToBattlefield(Opp, "lobo-musgo");
+        var behemoth = g.AddToBattlefield(Me, "colossal-dreadmaw");
+        var wolf = g.AddToBattlefield(Opp, "grizzly-bears");
         g.PassUntil(Step.DeclareAttackers);
         g.DeclareAttackers([behemoth.Id]);
         g.BothPass();
         g.DeclareBlockers(new Dictionary<int, int> { [wolf.Id] = behemoth.Id });
         g.PassUntil(Step.CombatDamage);
-        Assert.Equal(17, g.Players[Opp].Life);
+        Assert.Equal(16, g.Players[Opp].Life);
         Assert.Contains(wolf, g.Players[Opp].Graveyard);
     }
 
@@ -239,8 +240,8 @@ public class CombatTests
     public void DeathtouchKillsAnyBlockerOrAttacker()
     {
         var g = NewGame();
-        var behemoth = g.AddToBattlefield(Me, "behemot-valle");
-        var stalker = g.AddToBattlefield(Opp, "acechador-cienaga");
+        var behemoth = g.AddToBattlefield(Me, "colossal-dreadmaw");
+        var stalker = g.AddToBattlefield(Opp, "typhoid-rats");
         g.PassUntil(Step.DeclareAttackers);
         g.DeclareAttackers([behemoth.Id]);
         g.BothPass();
@@ -248,14 +249,14 @@ public class CombatTests
         g.PassUntil(Step.CombatDamage);
         Assert.Contains(behemoth, g.Players[Me].Graveyard);
         Assert.Contains(stalker, g.Players[Opp].Graveyard);
-        Assert.Equal(16, g.Players[Opp].Life); // 1 letal al acechador por arrollar, 4 al jugador
+        Assert.Equal(15, g.Players[Opp].Life); // 1 letal a las ratas por arrollar, 5 al jugador
     }
 
     [Fact]
     public void LifelinkGainsLife()
     {
         var g = NewGame();
-        var cleric = g.AddToBattlefield(Me, "clerigo-faro");
+        var cleric = g.AddToBattlefield(Me, "healers-hawk");
         g.PassUntil(Step.DeclareAttackers);
         g.DeclareAttackers([cleric.Id]);
         g.PassUntil(Step.CombatDamage);
@@ -268,7 +269,7 @@ public class CombatTests
     {
         var g = NewGame();
         g.SetLife(Opp, 2);
-        var wolf = g.AddToBattlefield(Me, "lobo-musgo");
+        var wolf = g.AddToBattlefield(Me, "grizzly-bears");
         g.PassUntil(Step.DeclareAttackers);
         g.DeclareAttackers([wolf.Id]);
         g.PassUntil(Step.CombatDamage);
@@ -293,14 +294,14 @@ public class TurnTests
     public void FullTurnCycleUntapsDrawsAndClearsDamage()
     {
         var g = NewGame();
-        var land = g.AddToBattlefield(Opp, "montana", tapped: true);
-        var wolf = g.AddToBattlefield(Opp, "lobo-musgo", summoningSick: true);
-        g.AddMana(Me, "montana");
-        g.Cast(g.AddToHand(Me, "chispazo").Id, Target.OfCard(wolf.Id));
+        var land = g.AddToBattlefield(Opp, "mountain", tapped: true);
+        var wolf = g.AddToBattlefield(Opp, "grizzly-bears", summoningSick: true);
+        g.AddMana(Me, "mountain");
+        g.Cast(g.AddToHand(Me, "shock").Id, Target.OfCard(wolf.Id));
         g.BothPass();
         Assert.Contains(wolf, g.Players[Opp].Graveyard);
 
-        var oppWolf = g.AddToBattlefield(Opp, "lobo-musgo", summoningSick: true);
+        var oppWolf = g.AddToBattlefield(Opp, "grizzly-bears", summoningSick: true);
         while (g.ActivePlayer != Opp || g.Step != Step.Main1) g.PassPriority();
 
         Assert.Equal(2, g.Turn);
@@ -314,9 +315,9 @@ public class TurnTests
     public void PumpEndsAtCleanup()
     {
         var g = NewGame();
-        var wolf = g.AddToBattlefield(Me, "lobo-musgo");
-        g.AddMana(Me, "bosque");
-        g.Cast(g.AddToHand(Me, "crecimiento-salvaje").Id, Target.OfCard(wolf.Id));
+        var wolf = g.AddToBattlefield(Me, "grizzly-bears");
+        g.AddMana(Me, "forest");
+        g.Cast(g.AddToHand(Me, "giant-growth").Id, Target.OfCard(wolf.Id));
         g.BothPass();
         Assert.Equal(5, wolf.Power);
         while (g.ActivePlayer == Me) g.PassPriority();
@@ -336,9 +337,9 @@ public class TurnTests
     public void CloneIsIndependentForUndo()
     {
         var g = NewGame();
-        var wolf = g.AddToBattlefield(Opp, "lobo-musgo");
-        g.AddMana(Me, "montana");
-        var bolt = g.AddToHand(Me, "chispazo");
+        var wolf = g.AddToBattlefield(Opp, "grizzly-bears");
+        g.AddMana(Me, "mountain");
+        var bolt = g.AddToHand(Me, "shock");
         var before = g.Clone();
 
         g.Cast(bolt.Id, Target.OfCard(wolf.Id));

@@ -38,9 +38,9 @@ public class ManaTests
     [Fact]
     public void AllCatalogCardsParse()
     {
-        Assert.Equal(66, CardCatalog.All.Count);
+        Assert.Equal(68, CardCatalog.All.Count);
         foreach (var card in CardCatalog.All.Values) _ = card.ManaCost;
-        Assert.Equal(Color.Red, CardCatalog.Get("montana").Produces);
-        Assert.IsType<DealDamage>(Assert.Single(CardCatalog.Get("chispazo").Effects));
+        Assert.Equal(Color.Red, CardCatalog.Get("mountain").Produces);
+        Assert.IsType<DealDamage>(Assert.Single(CardCatalog.Get("shock").Effects));
     }
 }

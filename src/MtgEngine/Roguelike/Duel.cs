@@ -136,7 +136,8 @@ public sealed class Duel
         attacker is not null && (!attacker.Has(Keyword.Flying) || blocker.Has(Keyword.Flying) || blocker.Has(Keyword.Reach));
 
     bool HasCastableInstant() =>
-        Game.Players[Human].Hand.Any(c => c.Definition.Type == CardType.Instant && Game.CanAfford(Human, c.Definition.ManaCost));
+        Game.CanCastSpells(Human)
+        && Game.Players[Human].Hand.Any(c => c.Definition.Type == CardType.Instant && Game.CanAfford(Human, c.Definition.ManaCost));
 
     bool HasPlayable()
     {

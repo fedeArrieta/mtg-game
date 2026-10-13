@@ -125,7 +125,7 @@ public partial class PuzzleEditorViewModel : ObservableObject
     {
         zone.Clear();
         foreach (var c in cards)
-            if (CardCatalog.All.TryGetValue(c.Card, out var def))
+            if (CardCatalog.TryGet(c.Card, out var def))
                 zone.Add(new EditorCardViewModel(def, onBattlefield) { Tapped = c.Tapped, Sick = c.Sick });
     }
 

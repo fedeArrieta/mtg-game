@@ -15,7 +15,7 @@ public partial class DuelCardViewModel(CardInstance card, DuelPlace place, strin
     public CardInstance Card { get; } = card;
     public DuelPlace Place { get; } = place;
     public string Name => Card.Name;
-    public string Cost => Card.IsLand ? "" : Game.CostOf(Card).ToString();
+    public string Cost => Card.IsLand ? "" : owner.Game.CostOf(Card).ToString();
     public string Stats => Card.IsCreature ? $"{Card.Power}/{Card.Toughness - Card.Damage}" : "";
     public string Text => Card.Definition.Text;
     public string State =>
@@ -36,6 +36,7 @@ public partial class DuelCardViewModel(CardInstance card, DuelPlace place, strin
 public partial class DuelViewModel : ObservableObject
 {
     readonly Duel duel;
+    internal Game Game => duel.Game;
     CardInstance? pendingCast;
     int? selectedBlocker;
     readonly Dictionary<int, int> blocks = [];
@@ -223,7 +224,7 @@ public partial class DuelViewModel : ObservableObject
                 .Select(grp => $"{grp.Key} ×{grp.Count()}{(grp.Count(c => c.Tapped) is > 0 and var t ? $" ({t} girada{(t > 1 ? "s" : "")})" : "")}"))
             : "Sin tierras en juego";
         CommanderInfo = enemy.Command.FirstOrDefault() is { } cmd
-            ? $"Comandante en la zona de mando: {cmd.Name} (cuesta {Game.CostOf(cmd)})"
+            ? $"Comandante en la zona de mando: {cmd.Name} (cuesta {g.CostOf(cmd)})"
             : "";
         Mana = you.Pool.Total == 0 ? "Sin maná flotante" : $"Maná flotante: {you.Pool}";
         StepText = $"Turno {g.Turn} · {(g.ActivePlayer == Duel.Human ? "tu turno" : "turno del rival")} · {PuzzleSolver.StepName(g.Step)}";

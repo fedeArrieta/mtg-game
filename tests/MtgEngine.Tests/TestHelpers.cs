@@ -10,7 +10,7 @@ static class TestHelpers
     public static Game NewGame()
     {
         var g = new Game("Fede", "Rival");
-        for (int i = 0; i < 10; i++) { g.AddToLibrary(Me, "lobo-musgo"); g.AddToLibrary(Opp, "lobo-musgo"); }
+        for (int i = 0; i < 10; i++) { g.AddToLibrary(Me, "grizzly-bears"); g.AddToLibrary(Opp, "grizzly-bears"); }
         g.StartAt(Me, Step.Main1);
         return g;
     }
