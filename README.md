@@ -31,7 +31,7 @@ Tests:
 dotnet test
 ```
 
-Cada push a `main` compila en GitHub Actions y deja un `MesaDelCaos.exe` para Windows listo para descargar en la pestaña **Actions** (artefacto `MesaDelCaos-win-x64`).
+Cada push a `main` corre los tests en GitHub Actions y publica una versión nueva. El último ejecutable para Windows siempre está en [MesaDelCaos.exe](https://github.com/fedeArrieta/mtg-game/releases/latest/download/MesaDelCaos.exe).
 
 ## Estructura
 

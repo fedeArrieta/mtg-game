@@ -8,6 +8,8 @@ on:
 jobs:
   build:
     runs-on: windows-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -20,3 +22,12 @@ jobs:
         with:
           name: MesaDelCaos-win-x64
           path: publish/MesaDelCaos.exe
+      # Cada push a main publica una versión nueva; el link releases/latest/download/MesaDelCaos.exe apunta siempre a la última.
+      - name: Crear versión descargable
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v0.1.${{ github.run_number }}
+          name: Mesa del Caos 0.1.${{ github.run_number }}
+          body: Configurador de escritorio del party game de Commander. Descargá MesaDelCaos.exe y abrilo en Windows; no hace falta instalar nada.
+          files: publish/MesaDelCaos.exe

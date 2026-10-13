@@ -9,7 +9,7 @@ public class HtmlExporterTests
 {
     static JsonElement ExtractConfig(string html)
     {
-        var match = Regex.Match(html, @"const CONFIG = (\{.*?\});\n");
+        var match = Regex.Match(html, @"const CONFIG = (\{.*?\});\r?\n");
         Assert.True(match.Success, "El HTML no tiene la configuración inyectada.");
         return JsonDocument.Parse(match.Groups[1].Value).RootElement;
     }
