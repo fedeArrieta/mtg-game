@@ -1,0 +1,121 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MtgParty.Desktop.ViewModels"
+             x:Class="MtgParty.Desktop.Views.PuzzleEditorView"
+             x:DataType="vm:PuzzleEditorViewModel"
+             x:Name="Root">
+  <UserControl.Resources>
+    <DataTemplate x:Key="EditorCard" x:DataType="vm:EditorCardViewModel">
+      <Border Classes="card" Padding="8,6" Margin="0,0,0,6">
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel Spacing="2">
+            <TextBlock Text="{Binding Name}" FontWeight="Bold" />
+            <TextBlock Text="{Binding Detail}" Classes="muted" FontSize="12" />
+            <StackPanel Orientation="Horizontal" Spacing="12" IsVisible="{Binding OnBattlefield}">
+              <CheckBox Content="Girada" IsChecked="{Binding Tapped}" />
+              <CheckBox Content="Mareo" IsChecked="{Binding Sick}" IsVisible="{Binding CanBeSick}"
+                        ToolTip.Tip="Entró este turno: no puede atacar salvo que tenga prisa" />
+            </StackPanel>
+          </StackPanel>
+          <Button Grid.Column="1" VerticalAlignment="Top" Content="Quitar"
+                  Command="{Binding #Root.((vm:PuzzleEditorViewModel)DataContext).RemoveCommand}" CommandParameter="{Binding}" />
+        </Grid>
+      </Border>
+    </DataTemplate>
+  </UserControl.Resources>
+
+  <DockPanel Margin="12,8">
+    <!-- Barra superior -->
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,12">
+      <StackPanel Spacing="2">
+        <TextBlock Classes="h2" Text="Editor de puzzles" />
+        <TextBlock Classes="muted" Text="Armá un tablero, comprobá que tenga solución y compartilo como archivo .mtgpuzzle." />
+      </StackPanel>
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+        <Button Content="Nuevo" Command="{Binding NewCommand}" />
+        <Button Content="Copiar el puzzle abierto" Command="{Binding CopyFromCurrentCommand}" />
+        <Button Content="Abrir…" Click="OnOpen" />
+        <Button Content="Guardar…" Click="OnSave" />
+      </StackPanel>
+    </Grid>
+
+    <!-- Barra inferior -->
+    <Border DockPanel.Dock="Bottom" Padding="0,10,0,0" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0">
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Text="{Binding Status}" TextWrapping="Wrap" VerticalAlignment="Center"
+                   Classes.muted="{Binding !StatusIsError}" Classes.error="{Binding StatusIsError}" />
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+          <Button Content="Verificar solución" Command="{Binding VerifyCommand}" IsEnabled="{Binding !IsVerifying}" />
+          <Button Classes="primary" Content="Probar" Command="{Binding PlayCommand}" />
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <Grid ColumnDefinitions="300,*,*,*" ColumnSpacing="12">
+      <!-- Datos del puzzle y catálogo -->
+      <ScrollViewer>
+        <StackPanel Spacing="8">
+          <TextBlock Text="Título" />
+          <TextBox Text="{Binding Title}" />
+          <TextBlock Text="Dificultad (1 a 5)" />
+          <NumericUpDown Value="{Binding Difficulty}" Minimum="1" Maximum="5" FormatString="0" />
+          <TextBlock Text="Descripción" />
+          <TextBox Text="{Binding Description}" TextWrapping="Wrap" AcceptsReturn="False" MinHeight="54" />
+          <TextBlock Text="Pista" />
+          <TextBox Text="{Binding Hint}" TextWrapping="Wrap" AcceptsReturn="False" MinHeight="54" />
+          <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+            <StackPanel Spacing="4">
+              <TextBlock Text="Tus vidas" />
+              <NumericUpDown Value="{Binding YourLife}" Minimum="1" Maximum="99" FormatString="0" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Spacing="4">
+              <TextBlock Text="Vidas del rival" />
+              <NumericUpDown Value="{Binding OpponentLife}" Minimum="1" Maximum="99" FormatString="0" />
+            </StackPanel>
+          </Grid>
+
+          <TextBlock Text="Carta" FontWeight="Bold" Margin="0,8,0,0" />
+          <ComboBox ItemsSource="{Binding Catalog}" SelectedItem="{Binding SelectedCard}" HorizontalAlignment="Stretch">
+            <ComboBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:CatalogCard"><TextBlock Text="{Binding Label}" /></DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+          <TextBlock Text="{Binding SelectedCard.Definition.Text}" Classes="muted" TextWrapping="Wrap" FontSize="12" />
+          <Button HorizontalAlignment="Stretch" Content="Agregar a tu mano" Command="{Binding AddToHandCommand}" />
+          <Button HorizontalAlignment="Stretch" Content="Agregar a tu campo" Command="{Binding AddToYourBattlefieldCommand}" />
+          <Button HorizontalAlignment="Stretch" Content="Agregar al campo del rival" Command="{Binding AddToOpponentBattlefieldCommand}" />
+
+          <TextBlock Text="Solución encontrada" FontWeight="Bold" Margin="0,8,0,0"
+                     IsVisible="{Binding HasSolution}" />
+          <ItemsControl ItemsSource="{Binding Solution}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="x:String">
+                <TextBlock Text="{Binding}" TextWrapping="Wrap" FontSize="12" Margin="0,0,0,2" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </ScrollViewer>
+
+      <!-- Zonas -->
+      <DockPanel Grid.Column="1">
+        <TextBlock DockPanel.Dock="Top" Text="Tu mano" FontWeight="Bold" Margin="0,0,0,6" />
+        <ScrollViewer>
+          <ItemsControl ItemsSource="{Binding YourHand}" ItemTemplate="{StaticResource EditorCard}" />
+        </ScrollViewer>
+      </DockPanel>
+      <DockPanel Grid.Column="2">
+        <TextBlock DockPanel.Dock="Top" Text="Tu campo" FontWeight="Bold" Margin="0,0,0,6" />
+        <ScrollViewer>
+          <ItemsControl ItemsSource="{Binding YourBattlefield}" ItemTemplate="{StaticResource EditorCard}" />
+        </ScrollViewer>
+      </DockPanel>
+      <DockPanel Grid.Column="3">
+        <TextBlock DockPanel.Dock="Top" Text="Campo del rival" FontWeight="Bold" Margin="0,0,0,6" />
+        <ScrollViewer>
+          <ItemsControl ItemsSource="{Binding OpponentBattlefield}" ItemTemplate="{StaticResource EditorCard}" />
+        </ScrollViewer>
+      </DockPanel>
+    </Grid>
+  </DockPanel>
+</UserControl>

@@ -25,6 +25,10 @@ En la pestaña **Puzzles** de la app hay 10 puzzles de dificultad creciente. Es 
 - Cada puzzle se verifica con un solucionador por fuerza bruta (`PuzzleSolver`), que también da las pistas. Los tests comprueban que todos tienen solución y que varios dejan de tenerla con una vida más para el rival.
 - Los puzzles están en `src/MtgEngine/Resources/puzzles.json`. El progreso se guarda en la carpeta de datos del usuario.
 
+### Editor de puzzles
+
+En la pestaña **Editor de puzzles** armás tu propio puzzle: título, dificultad, textos, vidas y qué cartas hay en tu mano, tu campo y el campo del rival (giradas o con mareo). **Verificar solución** corre el solucionador y te muestra una línea ganadora, y te avisa si con una vida más para el rival también se gana. **Probar** lo agrega a la lista de puzzles para jugarlo. Se guarda como archivo `.mtgpuzzle` para compartirlo, y se abre con **Abrir puzzle…** en la pestaña Puzzles.
+
 ## Motor de reglas
 
 `src/MtgEngine` es una librería con reglas simplificadas de Magic para dos jugadores, base de los puzzles y del roguelike:

@@ -7,9 +7,11 @@ using MtgEngine.Puzzles;
 namespace MtgParty.Desktop.ViewModels;
 
 /// <summary>Un puzzle de la lista de la izquierda.</summary>
-public partial class PuzzleItemViewModel(Puzzle puzzle) : ObservableObject
+public partial class PuzzleItemViewModel(Puzzle puzzle, bool isCustom = false) : ObservableObject
 {
     public Puzzle Puzzle { get; } = puzzle;
+    /// <summary>Armado en el editor o abierto desde un archivo, no viene con el juego.</summary>
+    public bool IsCustom { get; } = isCustom;
     public string Title => Puzzle.Title;
     public string Stars => new string('★', Puzzle.Difficulty) + new string('☆', 5 - Puzzle.Difficulty);
     [ObservableProperty] bool solved;
@@ -79,7 +81,7 @@ public partial class PuzzleViewModel : ObservableObject
         Selected = Puzzles.FirstOrDefault(p => !p.Solved) ?? Puzzles.FirstOrDefault();
     }
 
-    public string Progress => $"{Puzzles.Count(p => p.Solved)} de {Puzzles.Count} resueltos";
+    public string Progress => $"{Puzzles.Count(p => p.Solved && !p.IsCustom)} de {Puzzles.Count(p => !p.IsCustom)} resueltos";
 
     partial void OnSelectedChanged(PuzzleItemViewModel? value)
     {
@@ -89,6 +91,17 @@ public partial class PuzzleViewModel : ObservableObject
         Description = value.Puzzle.Description;
         Say("Ganá antes de que termine este turno.");
         Refresh();
+    }
+
+    /// <summary>Agrega un puzzle propio a la lista (o reemplaza el que tenga el mismo título) y lo abre.</summary>
+    public void AddCustom(Puzzle puzzle)
+    {
+        var existing = Puzzles.FirstOrDefault(p => p.IsCustom && p.Puzzle.Title == puzzle.Title);
+        var item = new PuzzleItemViewModel(puzzle, isCustom: true);
+        if (existing is not null) Puzzles[Puzzles.IndexOf(existing)] = item;
+        else Puzzles.Add(item);
+        OnPropertyChanged(nameof(Progress));
+        Selected = item;
     }
 
     // ---------- Acciones ----------
@@ -201,6 +214,8 @@ public partial class PuzzleViewModel : ObservableObject
         Refresh();
     }
 
+    public void ShowError(string text) => Say(text, error: true);
+
     void Say(string text, bool error = false)
     {
         Message = text;
@@ -243,7 +258,7 @@ public partial class PuzzleViewModel : ObservableObject
         if (IsWon && Selected is { Solved: false } solvedItem)
         {
             solvedItem.Solved = true;
-            solvedStore.Save(Puzzles.Where(p => p.Solved).Select(p => p.Puzzle.Id));
+            solvedStore.Save(Puzzles.Where(p => p.Solved && !p.IsCustom).Select(p => p.Puzzle.Id));
             OnPropertyChanged(nameof(Progress));
         }
         UpdatePrompt();
