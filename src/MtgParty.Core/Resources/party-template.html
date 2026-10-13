@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>__TITLE__</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral+SC:wght@500;700&family=Alegreya+Sans:wght@400;500;700&display=swap">
+<style>
+/* Layout: una mesa de juego oscura; arriba el turno, pestañas de mazos, cartas color pergamino como objetos sobre la mesa, botón de pasar turno fijo abajo */
+:root {
+  color-scheme: dark;
+  --table: #1c1726;      /* fondo: paño violeta oscuro */
+  --table-2: #261f33;    /* paneles sobre la mesa */
+  --line: #3a3149;
+  --ink: #ece4d4;        /* texto sobre la mesa */
+  --muted: #a99db8;
+  --parch: #efe3c8;      /* carta */
+  --parch-ink: #2b2131;
+  --gold: #d4a64a;       /* acento */
+  --danger: #e0705a;
+  --ok: #7fbf8a;
+  --w: #f3ecd0; --u: #5b9bd5; --b: #8a7f95; --r: #d9614c; --g: #5fae6a;
+  --display: "Spectral SC", "Palatino Linotype", Georgia, serif;
+  --body: "Alegreya Sans", "Segoe UI", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--table); color: var(--ink); font: 16px/1.45 var(--body); }
+.wrap { max-width: 760px; margin: 0 auto; padding-inline: 16px; padding-block: 12px 120px; display: grid; gap: 16px; }
+button { font: inherit; color: inherit; cursor: pointer; border: 1px solid var(--line); background: var(--table-2); border-radius: 8px; padding: 8px 12px; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+button.primary { background: var(--gold); color: var(--parch-ink); border-color: var(--gold); font-weight: 700; }
+button.ghost { background: transparent; }
+button:disabled { opacity: .45; cursor: default; }
+input[type=text] { font: inherit; color: var(--ink); background: var(--table); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; min-width: 0; width: 100%; }
+
+header { display: grid; gap: 10px; }
+.top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+h1 { font: 700 1.6rem/1.1 var(--display); margin: 0; letter-spacing: .02em; color: var(--gold); }
+.turnline { color: var(--muted); font-variant-numeric: tabular-nums; }
+.turnline b { color: var(--ink); }
+nav { display: flex; gap: 6px; overflow-x: auto; }
+nav button { flex: 1 0 auto; border-radius: 999px; font-weight: 500; }
+nav button[aria-selected="true"] { background: var(--ink); color: var(--table); border-color: var(--ink); }
+nav .count { display: inline-block; min-width: 1.4em; margin-left: 4px; font-size: .8em; padding: 0 5px; border-radius: 999px; background: var(--gold); color: var(--parch-ink); }
+
+h2 { font: 700 1.1rem var(--display); margin: 0; letter-spacing: .04em; text-wrap: balance; }
+.label { font-size: .75rem; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.spread { justify-content: space-between; }
+
+/* Jugadores */
+.players { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.player { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: grid; gap: 6px; background: var(--table-2); }
+.player.active { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold) inset; }
+.player.dead { opacity: .45; }
+.pname { font-weight: 700; display: flex; gap: 8px; align-items: center; min-width: 0; }
+.pname span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pip { width: 14px; height: 14px; border-radius: 50%; flex: none; border: 1px solid rgba(0,0,0,.35); }
+.life { font: 700 2.4rem/1 var(--display); font-variant-numeric: lining-nums tabular-nums; text-align: center; }
+.lifebtns { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+.lifebtns button { padding: 6px 0; }
+.tag { font-size: .75rem; color: var(--gold); }
+
+/* Cartas */
+.card { background: var(--parch); color: var(--parch-ink); border-radius: 12px; padding: 14px 16px; display: grid; gap: 6px; box-shadow: 0 6px 18px rgba(0,0,0,.35); position: relative; }
+.card h3 { font: 700 1.15rem var(--display); margin: 0; text-wrap: balance; }
+.card p { margin: 0; }
+.card .kind { font-size: .72rem; text-transform: uppercase; letter-spacing: .12em; opacity: .7; }
+.card .chaos { border-top: 1px solid rgba(43,33,49,.25); padding-top: 8px; }
+.card .chaos.hot { background: #f6d38a; margin: 0 -16px -14px; padding: 8px 16px 14px; border-radius: 0 0 12px 12px; }
+.card .actions { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; }
+.card button { background: transparent; color: var(--parch-ink); border-color: rgba(43,33,49,.35); padding: 5px 10px; font-size: .9rem; }
+.card.plane { min-height: 210px; align-content: start; background: linear-gradient(160deg, var(--parch), #e3d2ad); }
+.dur { position: absolute; top: 12px; right: 14px; font-size: .72rem; padding: 2px 8px; border-radius: 999px; background: var(--parch-ink); color: var(--parch); }
+.stack { display: grid; gap: 10px; }
+.empty { color: var(--muted); border: 1px dashed var(--line); border-radius: 10px; padding: 16px; text-align: center; }
+
+/* Misiones (dorso) */
+.backs { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+.back { aspect-ratio: 5/7; max-width: 100%; border-radius: 12px; border: 2px solid var(--gold); background:
+  repeating-linear-gradient(45deg, #2e2540 0 10px, #251e33 10px 20px); display: grid; place-content: center; text-align: center; gap: 6px; padding: 10px; }
+.back b { font: 700 1.1rem var(--display); color: var(--gold); }
+.back small { color: var(--muted); }
+
+/* Dado */
+.die { width: 64px; height: 64px; border-radius: 12px; background: var(--ink); color: var(--table); display: grid; place-content: center; font: 700 .8rem var(--display); text-align: center; flex: none; }
+.die.roll { animation: spin .5s ease-out; }
+@keyframes spin { from { transform: rotate(-200deg) scale(.6); } to { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .die.roll { animation: none; } }
+
+.log { margin: 0; padding-left: 18px; color: var(--muted); font-size: .9rem; display: grid; gap: 2px; }
+.log li b { color: var(--ink); font-weight: 500; }
+
+.bottom { position: fixed; left: 0; right: 0; bottom: 0; padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(transparent, var(--table) 30%); }
+.bottom .inner { max-width: 760px; margin: 0 auto; display: flex; gap: 8px; }
+.bottom .primary { flex: 1; padding: 14px; font-size: 1.05rem; }
+
+/* Overlay */
+.overlay { position: fixed; inset: 0; background: rgba(12,9,18,.94); display: grid; place-items: center; padding: 16px; z-index: 10; }
+.sheet { width: min(460px, 100%); display: grid; gap: 14px; max-height: 100%; overflow-y: auto; }
+.sheet .big { font: 700 1.4rem var(--display); text-align: center; text-wrap: balance; }
+.toast { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); background: var(--gold); color: var(--parch-ink); padding: 8px 14px; border-radius: 8px; font-weight: 700; z-index: 20; max-width: calc(100% - 32px); }
+
+.setup-list { display: grid; gap: 8px; }
+.setup-row { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; }
+.colors { display: flex; gap: 4px; }
+.colors button { width: 26px; height: 26px; padding: 0; border-radius: 50%; }
+.colors button[aria-pressed="true"] { outline: 2px solid var(--ink); outline-offset: 1px; }
+label.check { display: flex; gap: 8px; align-items: center; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="top">
+      <h1>__TITLE__</h1>
+      <div class="turnline" id="turnline"></div>
+    </div>
+    <nav role="tablist" id="tabs">
+      <button role="tab" data-tab="mesa">Mesa</button>
+      <button role="tab" data-tab="desafios">Desafíos</button>
+      <button role="tab" data-tab="misiones">Misiones</button>
+      <button role="tab" data-tab="planos">Planos</button>
+    </nav>
+  </header>
+  <main id="view"></main>
+</div>
+
+<div class="bottom"><div class="inner">
+  <button class="primary" id="passBtn">Pasar turno</button>
+</div></div>
+
+<div class="overlay" id="overlay" hidden><div class="sheet" id="sheet"></div></div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+// ---------- Contenido (original, para usar con cartas físicas de Commander) ----------
+// La configuración la inyecta la app de escritorio al exportar.
+const CONFIG = /*__CONFIG__*/null;
+const CHALLENGES = CONFIG.challenges.map(c => ({ t: c.title, x: c.text, d: c.duration }));
+const DUR = { now: "Ahora", once: "Una vez", round: "Esta ronda", game: "Toda la partida" };
+const MISSIONS = CONFIG.missions.map(m => ({ x: m.text, r: m.reward }));
+const PLANES = CONFIG.planes.map(p => ({ n: p.name, s: p.staticEffect, c: p.chaosEffect }));
+const HAS_PLANES = PLANES.length > 0, HAS_MISSIONS = MISSIONS.length > 0;
+
+const COLORS = ["w","u","b","r","g"];
+const COLOR_NAMES = {w:"Blanco",u:"Azul",b:"Negro",r:"Rojo",g:"Verde"};
+
+// ---------- Estado ----------
+const KEY = "mesa-del-caos-" + CONFIG.gameId;
+let S;
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const range = n => [...Array(n).keys()];
+function draw(deckKey, size) {
+  if (!S[deckKey] || !S[deckKey].length) S[deckKey] = shuffle(range(size));
+  return S[deckKey].pop();
+}
+function newGame(players, opts) {
+  S = {
+    players: players.map((p, i) => ({ id: i, name: p.name, color: p.color, life: opts.life, mission: null, missionsDone: 0 })),
+    life: opts.life, turn: 0, round: 1, tab: "mesa",
+    autoEvent: opts.autoEvent, challenges: [], plane: null, rolls: 0, lastRoll: null,
+    deckC: null, deckM: null, deckP: null, log: [], uid: 1,
+  };
+  if (HAS_MISSIONS) S.players.forEach(p => p.mission = draw("deckM", MISSIONS.length));
+  if (HAS_PLANES) { S.plane = draw("deckP", PLANES.length); addLog(`Empieza la partida en <b>${PLANES[S.plane].n}</b>.`); }
+  else addLog("Empieza la partida.");
+}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+function load() { try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.players) return s; } catch (e) {} return null; }
+function addLog(html) { S.log.unshift(`Ronda ${S.round}: ${html}`); S.log = S.log.slice(0, 30); }
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const alive = () => S.players.filter(p => p.life > 0);
+
+// ---------- Acciones ----------
+function drawChallenge(auto) {
+  if (!CHALLENGES.length) return;
+  const i = draw("deckC", CHALLENGES.length);
+  const c = CHALLENGES[i];
+  S.challenges.unshift({ uid: S.uid++, i, round: S.round });
+  addLog(`${auto ? "Evento de ronda" : "Desafío"}: <b>${esc(c.t)}</b>.`);
+  showCard(`<div class="label">${auto ? "Evento de ronda" : "Nuevo desafío"}</div>${challengeHTML(S.challenges[0], false)}`);
+}
+function passTurn() {
+  if (!alive().length) return;
+  let n = S.players.length, t = S.turn, wrapped = false;
+  do { t = (t + 1) % n; if (t === 0) wrapped = true; } while (S.players[t].life <= 0);
+  S.turn = t; S.rolls = 0; S.lastRoll = null;
+  if (wrapped) {
+    S.round++;
+    const before = S.challenges.length;
+    S.challenges = S.challenges.filter(c => !(CHALLENGES[c.i].d === "round" && c.round < S.round));
+    if (before !== S.challenges.length) addLog("Terminaron los desafíos de la ronda anterior.");
+    if (S.autoEvent) { drawChallenge(true); }
+  }
+  toast(`Turno de ${S.players[t].name}`);
+  render();
+}
+function rollDie() {
+  const cost = S.rolls; S.rolls++;
+  const f = Math.floor(Math.random() * 6);
+  const res = f === 0 ? "walk" : f === 1 ? "chaos" : "blank";
+  S.lastRoll = res;
+  const who = esc(S.players[S.turn].name);
+  if (res === "walk") {
+    const old = S.plane; S.plane = draw("deckP", PLANES.length);
+    if (S.plane === old) S.plane = draw("deckP", PLANES.length);
+    addLog(`${who} tiró el dado (costo ${cost}): planeswalk a <b>${PLANES[S.plane].n}</b>.`);
+  } else if (res === "chaos") addLog(`${who} tiró el dado (costo ${cost}): <b>caos</b> en ${PLANES[S.plane].n}.`);
+  else addLog(`${who} tiró el dado (costo ${cost}): nada.`);
+  render(true);
+}
+
+// ---------- Vistas ----------
+const pip = c => `<span class="pip" style="background:var(--${c})" title="${COLOR_NAMES[c]}"></span>`;
+function challengeHTML(ch, withActions = true) {
+  const c = CHALLENGES[ch.i];
+  const done = c.d === "now" ? "Hecho" : c.d === "game" ? "Quitar" : "Cumplido";
+  return `<article class="card"><span class="dur">${DUR[c.d]}</span><div class="kind">Desafío</div><h3>${esc(c.t)}</h3><p>${esc(c.x)}</p>
+    ${withActions ? `<div class="actions"><button data-act="done" data-uid="${ch.uid}">${done}</button></div>` : ""}</article>`;
+}
+function planeHTML(hot) {
+  const p = PLANES[S.plane];
+  return `<article class="card plane"><div class="kind">Plano</div><h3>${esc(p.n)}</h3><p>${esc(p.s)}</p>
+    <p class="chaos ${hot ? "hot" : ""}"><b>Caos:</b> ${esc(p.c)}</p></article>`;
+}
+function viewMesa() {
+  const cur = S.challenges.slice(0, 2);
+  return `<section class="stack">
+    <div class="players">${S.players.map((p, i) => `
+      <div class="player ${i === S.turn ? "active" : ""} ${p.life <= 0 ? "dead" : ""}">
+        <div class="row spread"><div class="pname">${pip(p.color)}<span>${esc(p.name)}</span></div>
+          <span class="tag">${i === S.turn ? "Juega ahora" : p.life <= 0 ? "Eliminado" : p.missionsDone ? `${p.missionsDone} misión${p.missionsDone > 1 ? "es" : ""}` : ""}</span></div>
+        <div class="life">${p.life}</div>
+        <div class="lifebtns">
+          <button data-act="life" data-p="${i}" data-d="-5" aria-label="Restar 5 a ${esc(p.name)}">−5</button>
+          <button data-act="life" data-p="${i}" data-d="-1" aria-label="Restar 1 a ${esc(p.name)}">−1</button>
+          <button data-act="life" data-p="${i}" data-d="1" aria-label="Sumar 1 a ${esc(p.name)}">+1</button>
+          <button data-act="life" data-p="${i}" data-d="5" aria-label="Sumar 5 a ${esc(p.name)}">+5</button>
+        </div>
+      </div>`).join("")}</div>
+    <div class="row spread"><h2>En juego</h2><span class="label">${HAS_PLANES ? "Plano y desafíos activos" : "Desafíos activos"}</span></div>
+    ${HAS_PLANES ? planeHTML(S.lastRoll === "chaos") : ""}
+    ${cur.length ? cur.map(c => challengeHTML(c)).join("") : `<div class="empty">No hay desafíos activos.</div>`}
+    ${S.challenges.length > 2 ? `<button class="ghost" data-tab-go="desafios">Ver los ${S.challenges.length} desafíos</button>` : ""}
+    <div class="row spread"><h2>Registro</h2><button class="ghost" data-act="setup">Nueva partida</button></div>
+    <ol class="log">${S.log.slice(0, 10).map(l => `<li>${l}</li>`).join("")}</ol>
+  </section>`;
+}
+function viewDesafios() {
+  return `<section class="stack">
+    <div class="row spread"><h2>Desafíos activos</h2><button class="primary" data-act="drawC">Robar desafío</button></div>
+    <label class="check"><input type="checkbox" id="autoEvent" ${S.autoEvent ? "checked" : ""}> Robar un evento automáticamente al empezar cada ronda</label>
+    ${S.challenges.length ? S.challenges.map(c => challengeHTML(c)).join("") : `<div class="empty">Ningún desafío en juego. Robá uno para agitar la mesa.</div>`}
+  </section>`;
+}
+function viewMisiones() {
+  return `<section class="stack">
+    <div class="row spread"><h2>Misiones secretas</h2><span class="label">Cada uno mira la suya</span></div>
+    <p style="margin:0;color:var(--muted)">Tocá tu carta y asegurate de que nadie más mire la pantalla. Cuando cumplas tu misión, revelala para cobrar la recompensa y robar otra.</p>
+    <div class="backs">${S.players.map((p, i) => `
+      <button class="back" data-act="mission" data-p="${i}" ${p.life <= 0 ? "disabled" : ""}>
+        ${pip(p.color)}<b>${esc(p.name)}</b><small>${p.life <= 0 ? "Eliminado" : "Tocá para ver"}</small></button>`).join("")}</div>
+  </section>`;
+}
+function viewPlanos() {
+  const r = S.lastRoll;
+  const face = r === "walk" ? "Plane&shy;walk" : r === "chaos" ? "Caos" : r === "blank" ? "Nada" : "Dado";
+  return `<section class="stack">
+    <div class="row spread"><h2>Plano actual</h2><span class="label">Dado planar</span></div>
+    ${planeHTML(r === "chaos")}
+    <div class="row">
+      <div class="die" id="die">${face}</div>
+      <div style="display:grid;gap:6px;flex:1;min-width:180px">
+        <button class="primary" data-act="roll">Tirar el dado (cuesta ${S.rolls} maná)</button>
+        <small style="color:var(--muted)">Solo en tu fase principal. Cada tirada extra en el mismo turno cuesta 1 maná más. 1 en 6: planeswalk, 1 en 6: caos.</small>
+      </div>
+    </div>
+  </section>`;
+}
+
+function render(rolled) {
+  const p = S.players[S.turn];
+  document.getElementById("turnline").innerHTML = `Ronda <b>${S.round}</b> · Turno de <b>${esc(p.name)}</b>`;
+  document.querySelectorAll("#tabs button").forEach(b => {
+    b.setAttribute("aria-selected", b.dataset.tab === S.tab);
+    if (b.dataset.tab === "desafios") b.innerHTML = `Desafíos${S.challenges.length ? `<span class="count">${S.challenges.length}</span>` : ""}`;
+  });
+  const v = { mesa: viewMesa, desafios: viewDesafios, misiones: viewMisiones, planos: viewPlanos }[S.tab]();
+  document.getElementById("view").innerHTML = v;
+  if (rolled) { const d = document.getElementById("die"); if (d) d.classList.add("roll"); }
+  save();
+}
+
+// ---------- Overlays ----------
+const ov = document.getElementById("overlay"), sheet = document.getElementById("sheet");
+function openSheet(html) { sheet.innerHTML = html; ov.hidden = false; const b = sheet.querySelector("button"); if (b) b.focus(); }
+function closeSheet() { ov.hidden = true; sheet.innerHTML = ""; }
+function showCard(html) { openSheet(`${html}<button class="primary" data-act="close">Listo</button>`); }
+function missionGate(i) {
+  const p = S.players[i];
+  openSheet(`<div class="big">¿Sos ${esc(p.name)}?</div><p style="text-align:center;color:var(--muted);margin:0">Que el resto mire para otro lado.</p>
+    <button class="primary" data-act="mshow" data-p="${i}">Mostrar mi misión</button><button class="ghost" data-act="close">Cancelar</button>`);
+}
+function missionShow(i) {
+  const p = S.players[i], m = MISSIONS[p.mission];
+  openSheet(`<article class="card"><div class="kind">Misión secreta de ${esc(p.name)}</div><h3>${esc(m.x)}</h3><p><b>Recompensa:</b> ${esc(m.r)}</p></article>
+    <button class="primary" data-act="mdone" data-p="${i}">La cumplí: revelarla</button>
+    <button data-act="mswap" data-p="${i}">Cambiarla por otra (pagás 2 vidas)</button>
+    <button class="ghost" data-act="close">Ocultar</button>`);
+}
+function setupSheet() {
+  const base = S ? S.players.map(p => ({ name: p.name, color: p.color })) : [];
+  while (base.length < 4) base.push({ name: `Jugador ${base.length + 1}`, color: COLORS[base.length] });
+  window._setup = base;
+  drawSetup();
+}
+function drawSetup() {
+  const b = window._setup;
+  openSheet(`<div class="big">Nueva partida</div>
+    <div class="setup-list">${b.map((p, i) => `<div class="setup-row">
+      <span class="label">${i + 1}</span>
+      <input type="text" id="pname-${i}" value="${esc(p.name)}" aria-label="Nombre del jugador ${i + 1}" maxlength="20">
+      <div class="colors">${COLORS.map(c => `<button aria-label="${COLOR_NAMES[c]}" aria-pressed="${p.color === c}" style="background:var(--${c})" data-act="scolor" data-p="${i}" data-c="${c}"></button>`).join("")}</div>
+    </div>`).join("")}</div>
+    <div class="row"><button data-act="sadd" ${b.length >= 6 ? "disabled" : ""}>Agregar jugador</button><button data-act="srem" ${b.length <= 2 ? "disabled" : ""}>Quitar jugador</button></div>
+    <label class="check"><input type="checkbox" id="setupAuto" checked> Evento automático en cada ronda</label>
+    <label class="check">Vidas iniciales <input type="text" id="setupLife" value="${S ? S.life : CONFIG.startingLife}" inputmode="numeric" style="width:70px"></label>
+    <button class="primary" data-act="sgo">Repartir misiones y empezar</button>
+    ${S ? `<button class="ghost" data-act="close">Volver a la partida</button>` : ""}`);
+}
+function readSetupNames() { window._setup.forEach((p, i) => { const el = document.getElementById(`pname-${i}`); if (el) p.name = el.value.trim() || `Jugador ${i + 1}`; }); }
+
+let tt;
+function toast(msg) { const t = document.getElementById("toast"); t.textContent = msg; t.hidden = false; clearTimeout(tt); tt = setTimeout(() => t.hidden = true, 1800); }
+
+// ---------- Eventos ----------
+document.addEventListener("click", e => {
+  const tab = e.target.closest("[data-tab]"); if (tab) { S.tab = tab.dataset.tab; render(); return; }
+  const go = e.target.closest("[data-tab-go]"); if (go) { S.tab = go.dataset.tabGo; render(); return; }
+  const el = e.target.closest("[data-act]"); if (!el) return;
+  const i = +el.dataset.p, act = el.dataset.act;
+  if (act === "life") { const p = S.players[i]; const was = p.life; p.life += +el.dataset.d; if (was > 0 && p.life <= 0) addLog(`<b>${esc(p.name)}</b> quedó eliminado.`); render(); }
+  else if (act === "drawC") { drawChallenge(false); render(); }
+  else if (act === "done") { S.challenges = S.challenges.filter(c => c.uid !== +el.dataset.uid); render(); }
+  else if (act === "roll") rollDie();
+  else if (act === "mission") missionGate(i);
+  else if (act === "mshow") missionShow(i);
+  else if (act === "mdone") {
+    const p = S.players[i], m = MISSIONS[p.mission];
+    p.missionsDone++; addLog(`<b>${esc(p.name)}</b> cumplió su misión: ${esc(m.x)} Recompensa: ${esc(m.r)}`);
+    p.mission = draw("deckM", MISSIONS.length);
+    showCard(`<div class="label">Misión cumplida por ${esc(p.name)}</div><article class="card"><h3>${esc(m.x)}</h3><p><b>Recompensa:</b> ${esc(m.r)}</p></article><p style="text-align:center;color:var(--muted);margin:0">Ya tenés una misión nueva esperándote.</p>`);
+    render();
+  }
+  else if (act === "mswap") { const p = S.players[i]; p.life -= 2; p.mission = draw("deckM", MISSIONS.length); addLog(`<b>${esc(p.name)}</b> pagó 2 vidas para cambiar su misión.`); render(); missionShow(i); }
+  else if (act === "close") closeSheet();
+  else if (act === "setup") setupSheet();
+  else if (act === "scolor") { readSetupNames(); window._setup[i].color = el.dataset.c; drawSetup(); }
+  else if (act === "sadd") { readSetupNames(); const n = window._setup.length; window._setup.push({ name: `Jugador ${n + 1}`, color: COLORS[n % 5] }); drawSetup(); }
+  else if (act === "srem") { readSetupNames(); window._setup.pop(); drawSetup(); }
+  else if (act === "sgo") {
+    readSetupNames();
+    const life = Math.max(1, parseInt(document.getElementById("setupLife").value, 10) || 40);
+    newGame(window._setup, { life, autoEvent: document.getElementById("setupAuto").checked });
+    closeSheet(); render(); toast("Misiones repartidas");
+  }
+});
+document.addEventListener("change", e => { if (e.target.id === "autoEvent") { S.autoEvent = e.target.checked; save(); } });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !ov.hidden && S) closeSheet(); });
+document.getElementById("passBtn").addEventListener("click", passTurn);
+
+// ---------- Arranque ----------
+document.querySelector('[data-tab="desafios"]').hidden = !CHALLENGES.length;
+document.querySelector('[data-tab="misiones"]').hidden = !HAS_MISSIONS;
+document.querySelector('[data-tab="planos"]').hidden = !HAS_PLANES;
+function start(data) {
+  S = (data && data.players) ? data : load();
+  if (!S) newGame(CONFIG.players, { life: CONFIG.startingLife, autoEvent: CONFIG.autoEventEachRound });
+  render();
+}
+window.claude?.hot?.snapshot?.(() => S);
+window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+</script>
+</body>
+</html>

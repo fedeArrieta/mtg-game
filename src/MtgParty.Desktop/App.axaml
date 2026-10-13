@@ -1,0 +1,43 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="MtgParty.Desktop.App"
+             RequestedThemeVariant="Dark">
+  <Application.Resources>
+    <SolidColorBrush x:Key="TableBrush">#1C1726</SolidColorBrush>
+    <SolidColorBrush x:Key="PanelBrush">#261F33</SolidColorBrush>
+    <SolidColorBrush x:Key="LineBrush">#3A3149</SolidColorBrush>
+    <SolidColorBrush x:Key="GoldBrush">#D4A64A</SolidColorBrush>
+    <SolidColorBrush x:Key="MutedBrush">#A99DB8</SolidColorBrush>
+    <SolidColorBrush x:Key="DangerBrush">#E0705A</SolidColorBrush>
+  </Application.Resources>
+  <Application.Styles>
+    <FluentTheme />
+    <Style Selector="Button.primary">
+      <Setter Property="Background" Value="{StaticResource GoldBrush}" />
+      <Setter Property="Foreground" Value="#2B2131" />
+      <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+    <Style Selector="Button.primary:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#E2B860" />
+      <Setter Property="Foreground" Value="#2B2131" />
+    </Style>
+    <Style Selector="Border.card">
+      <Setter Property="Background" Value="{StaticResource PanelBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Padding" Value="12" />
+    </Style>
+    <Style Selector="TextBlock.muted">
+      <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+    </Style>
+    <Style Selector="TextBlock.error">
+      <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
+    </Style>
+    <Style Selector="TextBlock.h1">
+      <Setter Property="FontSize" Value="24" />
+      <Setter Property="FontWeight" Value="Bold" />
+      <Setter Property="Foreground" Value="{StaticResource GoldBrush}" />
+    </Style>
+  </Application.Styles>
+</Application>

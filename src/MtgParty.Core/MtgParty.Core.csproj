@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\party-template.html" LogicalName="MtgParty.Core.party-template.html" />
+    <EmbeddedResource Include="Resources\default-cards.json" LogicalName="MtgParty.Core.default-cards.json" />
+  </ItemGroup>
+</Project>

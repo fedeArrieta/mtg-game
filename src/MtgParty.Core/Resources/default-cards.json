@@ -1,0 +1,290 @@
+{
+  "challenges": [
+    {
+      "title": "Eco arcano",
+      "text": "El próximo jugador que lance un instantáneo roba una carta.",
+      "duration": "once"
+    },
+    {
+      "title": "Tregua",
+      "text": "Hasta el final de la ronda, nadie puede atacar al jugador con menos vidas.",
+      "duration": "round"
+    },
+    {
+      "title": "Diezmo de tierra",
+      "text": "El próximo jugador que juegue una tierra le da 2 vidas al jugador que elija.",
+      "duration": "once"
+    },
+    {
+      "title": "Marea alta",
+      "text": "Esta ronda, cada criatura que entra al campo lo hace con un contador +1/+1.",
+      "duration": "round"
+    },
+    {
+      "title": "Cazarrecompensas",
+      "text": "El primero que destruya una criatura de un oponente roba 2 cartas.",
+      "duration": "once"
+    },
+    {
+      "title": "Voto de silencio",
+      "text": "Esta ronda nadie puede hablar de estrategia en voz alta. Quien lo haga pierde 2 vidas.",
+      "duration": "round"
+    },
+    {
+      "title": "Viento que cambia de mano",
+      "text": "Cada jugador le pasa una carta al azar de su mano al jugador de su izquierda.",
+      "duration": "now"
+    },
+    {
+      "title": "Banquete",
+      "text": "Todos los jugadores ganan 5 vidas.",
+      "duration": "now"
+    },
+    {
+      "title": "Lluvia de meteoros",
+      "text": "Cada criatura recibe 1 de daño.",
+      "duration": "now"
+    },
+    {
+      "title": "Pacto de sangre",
+      "text": "Esta ronda, una vez por turno, cada jugador puede pagar 2 vidas para robar una carta.",
+      "duration": "round"
+    },
+    {
+      "title": "Duelo de bibliotecas",
+      "text": "El jugador activo elige un oponente. Ambos revelan la carta de arriba de su biblioteca: el de mayor valor de maná se la queda en la mano y el otro pierde 3 vidas.",
+      "duration": "now"
+    },
+    {
+      "title": "Amnistía de mando",
+      "text": "Esta ronda, el impuesto de comandante cuesta 2 menos.",
+      "duration": "round"
+    },
+    {
+      "title": "Ofrenda",
+      "text": "El primero que sacrifique un permanente roba una carta y gana 2 vidas.",
+      "duration": "once"
+    },
+    {
+      "title": "Rencor del pueblo",
+      "text": "Cada vez que alguien ataca al jugador con más vidas, el atacante gana 1 vida.",
+      "duration": "game"
+    },
+    {
+      "title": "Cosecha",
+      "text": "Cada jugador puede buscar una tierra básica, ponerla en el campo girada y barajar.",
+      "duration": "now"
+    },
+    {
+      "title": "Mano de hierro",
+      "text": "Esta ronda, el tamaño máximo de mano es 4.",
+      "duration": "round"
+    },
+    {
+      "title": "Reflejo menor",
+      "text": "Cuando se lance el próximo hechizo de criatura, el jugador a la izquierda de quien lo lanzó crea una ficha de criatura 2/2 incolora.",
+      "duration": "once"
+    },
+    {
+      "title": "Piedad",
+      "text": "El jugador con menos vidas roba 2 cartas.",
+      "duration": "now"
+    },
+    {
+      "title": "Tormenta de maná",
+      "text": "Esta ronda, cada jugador agrega un maná de cualquier color en su primera fase principal.",
+      "duration": "round"
+    },
+    {
+      "title": "Juicio popular",
+      "text": "Cuenten hasta tres y todos señalan a un jugador. El más votado pierde 4 vidas. Si hay empate, nadie pierde.",
+      "duration": "now"
+    },
+    {
+      "title": "Contrabando",
+      "text": "El próximo jugador que lance un artefacto roba una carta.",
+      "duration": "once"
+    },
+    {
+      "title": "Declaración de guerra",
+      "text": "Esta ronda, antes de atacar hay que anunciar en voz alta a quién y por qué. Quien se olvida no puede atacar ese turno.",
+      "duration": "round"
+    },
+    {
+      "title": "Fiebre del oro",
+      "text": "La primera vez que cada jugador controle 10 o más tierras, gana 5 vidas.",
+      "duration": "game"
+    },
+    {
+      "title": "Trueque",
+      "text": "El jugador activo puede intercambiar el control de una tierra suya por una tierra de un oponente.",
+      "duration": "now"
+    },
+    {
+      "title": "Despertar",
+      "text": "Cada jugador puede devolver una carta de criatura de su cementerio a su mano.",
+      "duration": "now"
+    },
+    {
+      "title": "Último aliento",
+      "text": "El próximo jugador que quede en 10 vidas o menos roba 3 cartas.",
+      "duration": "once"
+    }
+  ],
+  "missions": [
+    {
+      "text": "Atacá a tres oponentes distintos en un mismo turno.",
+      "reward": "Robá 2 cartas."
+    },
+    {
+      "text": "Controlá 5 o más criaturas al mismo tiempo.",
+      "reward": "Ganá 5 vidas."
+    },
+    {
+      "text": "Lanzá dos instantáneos durante el turno de un oponente.",
+      "reward": "Robá 2 cartas."
+    },
+    {
+      "text": "Hacé que un oponente pierda 10 o más vidas en un solo turno.",
+      "reward": "Poné un contador +1/+1 en cada criatura que controlás."
+    },
+    {
+      "text": "Terminá tu turno sin cartas en la mano.",
+      "reward": "Robá 3 cartas."
+    },
+    {
+      "text": "Destruí o exiliá un artefacto o encantamiento de un oponente.",
+      "reward": "Ganá 3 vidas y robá 1 carta."
+    },
+    {
+      "text": "Tené más vidas que al empezar la partida.",
+      "reward": "Robá 2 cartas."
+    },
+    {
+      "text": "Lanzá tu comandante por segunda vez.",
+      "reward": "La próxima vez que lo lances, no pagás impuesto de comandante."
+    },
+    {
+      "text": "Hacé un pacto en voz alta con otro jugador y que ambos lo cumplan durante una ronda entera.",
+      "reward": "Robá 2 cartas y tu socio roba 1."
+    },
+    {
+      "text": "Que una criatura tuya con fuerza 1 o menos le haga daño a un jugador.",
+      "reward": "Robá 2 cartas."
+    },
+    {
+      "text": "Lanzá un hechizo de valor de maná 6 o más.",
+      "reward": "Ganá 4 vidas."
+    },
+    {
+      "text": "Sacrificá tres permanentes en un mismo turno.",
+      "reward": "Devolvé una carta de tu cementerio a tu mano."
+    },
+    {
+      "text": "Bloqueá con la misma criatura dos veces y que sobreviva ambas.",
+      "reward": "Esa criatura recibe dos contadores +1/+1."
+    },
+    {
+      "text": "Convencé a un jugador de atacar a un tercero, y que lo haga.",
+      "reward": "Robá 2 cartas."
+    },
+    {
+      "text": "Controlá permanentes de tres colores distintos.",
+      "reward": "Buscá una tierra básica y ponela en el campo."
+    },
+    {
+      "text": "Tené 10 o más cartas en tu cementerio.",
+      "reward": "Devolvé una carta de criatura de tu cementerio al campo."
+    },
+    {
+      "text": "Ganá vidas en tres turnos seguidos.",
+      "reward": "Robá 2 cartas."
+    },
+    {
+      "text": "Pasá una ronda entera sin atacar y sin perder vidas.",
+      "reward": "Ganá 6 vidas."
+    }
+  ],
+  "planes": [
+    {
+      "name": "La Biblioteca Hundida",
+      "staticEffect": "Cada jugador roba una carta adicional en su paso de robar y descarta una carta al final de su turno.",
+      "chaosEffect": "Cada jugador roba una carta."
+    },
+    {
+      "name": "Forja de Cenizas",
+      "staticEffect": "Los hechizos rojos cuestan 1 menos.",
+      "chaosEffect": "Este plano hace 3 de daño a cualquier objetivo que elijas."
+    },
+    {
+      "name": "El Bosque que Respira",
+      "staticEffect": "Las criaturas verdes reciben +1/+1.",
+      "chaosEffect": "Creá una ficha de criatura Bestia 3/3 verde."
+    },
+    {
+      "name": "Mercado de las Mil Lunas",
+      "staticEffect": "Al principio de tu mantenimiento, podés pagar 2 vidas para robar una carta.",
+      "chaosEffect": "Intercambiá una carta de tu mano por una al azar de la mano de un oponente."
+    },
+    {
+      "name": "Osario del Rey Vacío",
+      "staticEffect": "Cada vez que muere una criatura, su dueño gana 1 vida.",
+      "chaosEffect": "Devolvé una carta de criatura de tu cementerio a tu mano."
+    },
+    {
+      "name": "Torre de los Cuatro Vientos",
+      "staticEffect": "Todas las criaturas tienen la habilidad de volar.",
+      "chaosEffect": "Regresá una criatura objetivo a la mano de su dueño."
+    },
+    {
+      "name": "Catedral de Cristal",
+      "staticEffect": "El daño de combate que recibiría un jugador se reduce en 1 por cada criatura atacante.",
+      "chaosEffect": "Ganá 4 vidas."
+    },
+    {
+      "name": "Pantano de las Voces",
+      "staticEffect": "Los hechizos negros cuestan 1 menos.",
+      "chaosEffect": "Cada oponente pierde 2 vidas."
+    },
+    {
+      "name": "Arrecife Espejado",
+      "staticEffect": "Los hechizos azules cuestan 1 menos.",
+      "chaosEffect": "Copiá el próximo instantáneo o conjuro que lances este turno."
+    },
+    {
+      "name": "Llanura del Juramento",
+      "staticEffect": "Los hechizos blancos cuestan 1 menos.",
+      "chaosEffect": "Creá dos fichas de criatura Soldado 1/1 blancas."
+    },
+    {
+      "name": "Ciudad del Reloj",
+      "staticEffect": "Los hechizos de artefacto cuestan 1 menos.",
+      "chaosEffect": "Enderezá todos los permanentes que controlás."
+    },
+    {
+      "name": "Desierto de los Ecos",
+      "staticEffect": "Cada vez que un jugador lanza su segundo hechizo en un turno, roba una carta.",
+      "chaosEffect": "Tu próximo hechizo de este turno cuesta 2 menos."
+    },
+    {
+      "name": "Coliseo Eterno",
+      "staticEffect": "Las criaturas atacantes reciben +2/+0.",
+      "chaosEffect": "Hasta el final del turno, las criaturas de un oponente que elijas no pueden bloquear."
+    },
+    {
+      "name": "Grieta del Tiempo",
+      "staticEffect": "Al final de cada turno, el jugador activo puede mirar las tres cartas de arriba de su biblioteca y ponerlas en cualquier orden.",
+      "chaosEffect": "Robá dos cartas y después descartá una."
+    },
+    {
+      "name": "Jardín de Hongos",
+      "staticEffect": "Al principio de cada mantenimiento, el jugador activo crea una ficha de criatura Saprolín 1/1 verde.",
+      "chaosEffect": "Las criaturas que controlás reciben +1/+1 hasta el final del turno."
+    },
+    {
+      "name": "Valle del Silencio",
+      "staticEffect": "Las habilidades activadas de las criaturas cuestan 1 más para activarse.",
+      "chaosEffect": "Destruí un artefacto o encantamiento objetivo."
+    }
+  ]
+}
