@@ -17,6 +17,19 @@ La app de escritorio (C#, .NET 8, Avalonia) permite:
 
 Todo el contenido es original. Es un proyecto de fans gratuito y no comercial, dentro de la Fan Content Policy de Wizards of the Coast.
 
+## Motor de reglas (etapa 2, en progreso)
+
+`src/MtgEngine` es una librería con reglas simplificadas de Magic para dos jugadores, base de los puzzles y del roguelike:
+
+- Maná por color con reserva que se vacía entre pasos, tierras (una por turno) y costes como `{2}{R}{R}`.
+- Pila con prioridad: los hechizos se resuelven cuando ambos jugadores pasan, se puede responder con instantáneos y un hechizo cuyo objetivo desaparece se neutraliza.
+- Pasos del turno completos: enderezar, mantenimiento, robar, fases principales, combate y limpieza.
+- Combate con atacantes y bloqueadores, mareo de invocación y las habilidades volar, alcance, prisa, vigilancia, arrollar, toque mortal, vínculo vital y defensor.
+- Acciones de estado: criaturas que mueren, jugadores sin vidas o sin cartas para robar.
+- `Game.Clone()` copia la partida completa, para deshacer jugadas.
+
+Las cartas son originales y están en `src/MtgEngine/Resources/cards.json`.
+
 ## Cómo correrlo
 
 Necesitás el [SDK de .NET 8](https://dotnet.microsoft.com/download/dotnet/8.0).
@@ -40,3 +53,5 @@ Cada push a `main` corre los tests en GitHub Actions y publica una versión nuev
 | `src/MtgParty.Core` | Modelos, contenido por defecto (`Resources/default-cards.json`), plantilla HTML y exportador |
 | `src/MtgParty.Desktop` | App de escritorio Avalonia (configurador) |
 | `tests/MtgParty.Core.Tests` | Tests del exportador y del formato `.mtgparty` |
+| `src/MtgEngine` | Motor de reglas y catálogo de cartas originales |
+| `tests/MtgEngine.Tests` | Tests de maná, pila, combate y turnos |
